@@ -10,3 +10,9 @@
 **/llms_results/
 
 .vscode/
+**/forge/out/
+**/forge/cache/
+**/forge/lib/
+**/forge/foundry.lock
+.gitmodules
+**/forge/README.md
