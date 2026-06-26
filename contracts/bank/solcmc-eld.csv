@@ -37,8 +37,8 @@ credit-dec-onlyif-withdraw,v1,N
 credit-dec-onlyif-withdraw,v10,N
 credit-dec-onlyif-withdraw,v11,N!
 credit-dec-onlyif-withdraw,v12,N
-credit-dec-onlyif-withdraw,v13,N
-credit-dec-onlyif-withdraw,v14,N!
+credit-dec-onlyif-withdraw,v13,UNK
+credit-dec-onlyif-withdraw,v14,N
 credit-dec-onlyif-withdraw,v15,P!
 credit-dec-onlyif-withdraw,v16,N
 credit-dec-onlyif-withdraw,v17,N!
@@ -139,14 +139,14 @@ deposit-revert,v1,P!
 deposit-revert,v10,P!
 deposit-revert,v11,P!
 deposit-revert,v12,P!
-deposit-revert,v13,N
+deposit-revert,v13,UNK
 deposit-revert,v14,P!
 deposit-revert,v15,P!
 deposit-revert,v16,N!
 deposit-revert,v17,P!
 deposit-revert,v2,P!
 deposit-revert,v3,P!
-deposit-revert,v4,UNK
+deposit-revert,v4,N
 deposit-revert,v5,P!
 deposit-revert,v6,P!
 deposit-revert,v7,N
