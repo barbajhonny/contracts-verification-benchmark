@@ -44,7 +44,7 @@ PYTHON = python3
 
 .PHONY: all certora solcmc halmos plain clean cleanr
 
-all: plain solcmc certora
+all: plain solcmc certora halmos
 	@echo "Adding Solcmc table to README..."
 	@echo "### SolCMC" >> $(README)
 	@cat $(Z3_TABLE) >> $(README)
@@ -112,7 +112,7 @@ $(ELD_OUT): setup
 #---------------------------- HALMOS -----------------------------#
 halmos: $(HALMOS_TABLE)
 
-$(HALMOS_TABLE): $(HALMOS_CM)
+$(HALMOS_TABLE): $(HALMOS_CM) 
 	@echo "Generating Halmos results table ($(HALMOS_TABLE))..."
 	@echo "### Halmos" > $(HALMOS_TABLE)
 	@$(PYTHON) ../../scripts/mdtable_gen.py --input $(HALMOS_CM) >> $(HALMOS_TABLE)
