@@ -220,6 +220,7 @@ def gen(usecase_dir: Path) -> str:
 - [Solcmc/z3](solcmc-z3.csv)
 - [Solcmc/Eldarica](solcmc-eld.csv)
 - [Certora](certora.csv)
+- [Halmos](halmos.csv)
 """
         # "ground_truth": mdtable.gen_from_csv(ground_truth_path)
     }

@@ -14,5 +14,10 @@
 **/forge/cache/
 **/forge/lib/
 **/forge/foundry.lock
-.gitmodules
 **/forge/README.md
+
+# Halmos artifacts
+**/halmos/out/
+**/halmos/cache/
+
+.gitmodules
