@@ -42,7 +42,7 @@ HALMOS_LOGS = $(HALMOS_DIR)/logs
 
 PYTHON = python3
 
-.PHONY: all certora solcmc plain clean cleanr
+.PHONY: all certora solcmc halmos plain clean cleanr
 
 all: plain solcmc certora halmos
 	@echo "Adding Solcmc table to README..."
