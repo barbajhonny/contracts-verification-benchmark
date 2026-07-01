@@ -56,22 +56,6 @@ all: plain solcmc certora halmos
 	@echo "Adding Halmos table to README..."
 	@cat $(HALMOS_TABLE) >> $(README)
 
-#---------------------------- HALMOS -----------------------------#
-halmos: $(HALMOS_TABLE)
-
-$(HALMOS_TABLE): $(HALMOS_CM)
-	@echo "Generating Halmos results table ($(HALMOS_TABLE))..."
-	@echo "### Halmos" > $(HALMOS_TABLE)
-	@$(PYTHON) ../../scripts/mdtable_gen.py --input $(HALMOS_CM) >> $(HALMOS_TABLE)
-
-$(HALMOS_CM): $(GROUND_TRUTH) $(HALMOS_OUT)
-	@echo "Generating Halmos confusion matrix ($(HALMOS_CM))..."
-	@$(PYTHON) ../../scripts/cm_gen.py --ground-truth $(GROUND_TRUTH) --results $(HALMOS_OUT) > $(HALMOS_CM)
-
-$(HALMOS_OUT): setup
-	@echo "Running Halmos experiments..."
-	@$(PYTHON) ../../scripts/run_halmos.py --contracts $(CONTRACT) --output $(HALMOS_DIR)
-
 #---------------------------- CERTORA ----------------------------#
 certora: $(CERTORA_TABLE)
 
@@ -124,6 +108,22 @@ $(ELD_CM): $(GROUND_TRUTH) $(ELD_OUT)
 $(ELD_OUT): setup
 	@echo "Running SolCMC ($(solver)) experiments..."
 	@$(PYTHON) ../../scripts/run_solcmc.py --contracts $(SOLCMC_CONTRACT) --output $(ELD_DIR) --timeout $(to) --solver eld
+
+#---------------------------- HALMOS -----------------------------#
+halmos: $(HALMOS_TABLE)
+
+$(HALMOS_TABLE): $(HALMOS_CM)
+	@echo "Generating Halmos results table ($(HALMOS_TABLE))..."
+	@echo "### Halmos" > $(HALMOS_TABLE)
+	@$(PYTHON) ../../scripts/mdtable_gen.py --input $(HALMOS_CM) >> $(HALMOS_TABLE)
+
+$(HALMOS_CM): $(GROUND_TRUTH) $(HALMOS_OUT)
+	@echo "Generating Halmos confusion matrix ($(HALMOS_CM))..."
+	@$(PYTHON) ../../scripts/cm_gen.py --ground-truth $(GROUND_TRUTH) --results $(HALMOS_OUT) > $(HALMOS_CM)
+
+$(HALMOS_OUT): setup
+	@echo "Running Halmos experiments..."
+	@$(PYTHON) ../../scripts/run_halmos.py --contracts $(CONTRACT) --output $(HALMOS_DIR)
 
 #---------------------------- SETUP ------------------------------#
 setup: $(Z3_LOGS) $(ELD_LOGS) $(CERTORA_LOGS) $(HALMOS_LOGS)
