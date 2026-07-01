@@ -1,9 +1,8 @@
 [profile.default]
-src = '.'
+src = '../'
 test = '.'
 out = 'out'
 
 remappings = [
-    'forge-std/=/home/giovanni/tirocinio/contracts-verification-benchmark/lib/forge-std/src/',
-    'target/=/home/giovanni/tirocinio/contracts-verification-benchmark/regression/assembly_assignment/'
+    'target/=../'
 ]

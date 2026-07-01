@@ -49,6 +49,6 @@ The property `f-return-correct-x` should pass since we know the return value.
 ### Halmos
 |        | f-return-correct-x |
 |--------|--------------------|
-| **v1** | FN!                |
+| **v1** | TP!                |
  
 
