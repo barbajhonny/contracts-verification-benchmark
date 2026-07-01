@@ -42,7 +42,7 @@ The property `f-return-correct-x` should pass since we know the return value.
 ### Certora
 |        | f-return-correct-x |
 |--------|--------------------|
-| **v1** | ERR                |
+| **v1** | TP!                |
  
 
 
