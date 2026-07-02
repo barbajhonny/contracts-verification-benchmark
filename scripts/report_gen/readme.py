@@ -221,8 +221,8 @@ def gen(usecase_dir: Path) -> str:
 - [Solcmc/Eldarica](solcmc-eld.csv)
 - [Certora](certora.csv)
 - [Halmos](halmos.csv)
-"""
-        # "ground_truth": mdtable.gen_from_csv(ground_truth_path)
+""",
+        "ground_truth": mdtable.gen_from_csv(ground_truth_path)
     }
 
     template = CLASSIC_TEMPLATE if versions else REGRESSION_TEMPLATE
