@@ -43,13 +43,13 @@ The property `ex-call-is-made` checks if an external call appened.
 ### Certora
 |        | call-failure    | call-success    | ex-call-is-made |
 |--------|-----------------|-----------------|-----------------|
-| **v1** | ERR             | ERR             | ERR             |
+| **v1** | TN              | TN              | TP!             |
  
 
 
 ### Halmos
 |        | call-failure    | call-success    | ex-call-is-made |
 |--------|-----------------|-----------------|-----------------|
-| **v1** | FP!             | FP!             | TP!             |
+| **v1** | TN!             | TN!             | FN!             |
  
 
