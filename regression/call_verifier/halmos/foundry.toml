@@ -2,7 +2,8 @@
 src = '../'
 test = '.'
 out = 'out'
+libs = ['../../../lib']
 
 remappings = [
-    'target/=../'
+    'target/=../',
 ]
