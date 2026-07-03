@@ -22,7 +22,6 @@ def run_halmos_for_task(p, v, halmos_dir, output_dir):
         halmos_res = subprocess.run(["halmos"], cwd=halmos_dir, capture_output=True, text=True)
         output = halmos_res.stdout + halmos_res.stderr
         
-        # --- FIX: Save the log inside build/halmos/logs/ ---
         logs_dir = Path(output_dir).joinpath("logs")
         logs_dir.mkdir(parents=True, exist_ok=True)
         log_filename = f"{v}_{p}.log"
