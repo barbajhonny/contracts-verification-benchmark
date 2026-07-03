@@ -50,6 +50,6 @@ The property `ex-call-is-made` checks if an external call appened.
 ### Halmos
 |        | call-failure    | call-success    | ex-call-is-made |
 |--------|-----------------|-----------------|-----------------|
-| **v1** | TN!             | TN!             | FN!             |
+| **v1** | TN!             | TN!             | TP!             |
  
 
