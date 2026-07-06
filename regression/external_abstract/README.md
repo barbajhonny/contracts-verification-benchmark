@@ -40,11 +40,12 @@ We cannot trust `d.d` call because `d` could be implemented to call the function
 - **x-abstract-call**: after calling the function `d` from abstract contract `D`, `x` remains unchanged
 
 ## Ground truth
-|        | x-abstract-call |
-|--------|-----------------|
-| **v1** | 0[^1]           |
- 
-[^1]: `x` can change because `d`'s code can call function `f`
+
+- [Ground truth](ground-truth.csv)
+- [Solcmc/z3](solcmc-z3.csv)
+- [Solcmc/Eldarica](solcmc-eld.csv)
+- [Certora](certora.csv)
+- [Halmos](halmos.csv)
 
 ## Experiments
 ### SolCMC
@@ -65,5 +66,12 @@ We cannot trust `d.d` call because `d` could be implemented to call the function
 |        | x-abstract-call |
 |--------|-----------------|
 | **v1** | TN              |
+ 
+
+
+### Halmos
+|        | x-abstract-call |
+|--------|-----------------|
+| **v1** | TN!             |
  
 
