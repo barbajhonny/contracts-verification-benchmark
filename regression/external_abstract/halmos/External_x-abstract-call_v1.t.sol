@@ -25,15 +25,13 @@ contract ExternalAbstractReentrancyTest is Test {
     Attacker attacker;
 
     // Storage layout di ExternalAbstract: slot0 = x (uint256, slot pieno),
-    // slot1 = d (address, 20 byte). Verificare con
-    // `forge inspect ExternalAbstract storage-layout` se il layout cambia.
+    // slot1 = d (address, 20 byte).
     uint256 constant X_SLOT = 0;
     uint256 constant D_SLOT = 1;
 
     function setUp() public {
         target = new ExternalAbstract();
         attacker = new Attacker(target);
-        // colleghiamo target.d al nostro contratto "malevolo"
         vm.store(
             address(target),
             bytes32(D_SLOT),
@@ -41,11 +39,7 @@ contract ExternalAbstractReentrancyTest is Test {
         );
     }
 
-    /// Proprietà sotto verifica (equivalente all'assert/rule di
-    /// Certora/SolCMC per questo caso): x deve restare < 10 in ogni
-    /// momento, anche attraversando la external call fatta da g().
-    ///
-    /// Halmos deve trovare un controesempio con x0 == 9:
+    
     /// g() supera il require(x<10), poi la external call reentra in
     /// f(), portando x a 10 PRIMA che g() ritorni.
     function check_x_abstract_call(uint256 x0) public {
