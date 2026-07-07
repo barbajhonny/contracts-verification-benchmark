@@ -4,10 +4,7 @@ pragma solidity ^0.8.25;
 import "target/ExternalAbstract_v1.sol";
 import "forge-std/Test.sol";
 
-/// @notice Rappresenta un'implementazione arbitraria/non fidata di `D`.
-/// Nel modello di verifica, un external call verso un contratto astratto
-/// può fare "qualsiasi cosa" prima di ritornare: qui modelliamo il worst
-/// case concreto, cioè un reentrant call a `f()`.
+
 contract Attacker is D {
     ExternalAbstract public target;
 
