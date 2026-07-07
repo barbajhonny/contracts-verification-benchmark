@@ -18,12 +18,10 @@ The property `ex-call-is-made` checks if an external call appened.
 - **ex-call-is-made**: an external call has been performed
 
 ## Ground truth
-
-- [Ground truth](ground-truth.csv)
-- [Solcmc/z3](solcmc-z3.csv)
-- [Solcmc/Eldarica](solcmc-eld.csv)
-- [Certora](certora.csv)
-- [Halmos](halmos.csv)
+|        | call-failure    | call-success    | ex-call-is-made |
+|--------|-----------------|-----------------|-----------------|
+| **v1** | 0               | 0               | 1               |
+ 
 
 ## Experiments
 ### SolCMC
