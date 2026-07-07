@@ -17,12 +17,10 @@ The property `f-return-correct-x` should pass since we know the return value.
 - **f-return-correct-x**: the function `f` returns the correct value of `x` (2).
 
 ## Ground truth
-
-- [Ground truth](ground-truth.csv)
-- [Solcmc/z3](solcmc-z3.csv)
-- [Solcmc/Eldarica](solcmc-eld.csv)
-- [Certora](certora.csv)
-- [Halmos](halmos.csv)
+|        | f-return-correct-x |
+|--------|--------------------|
+| **v1** | 1                  |
+ 
 
 ## Experiments
 ### SolCMC
