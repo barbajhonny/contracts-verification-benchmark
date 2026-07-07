@@ -2,7 +2,7 @@ MAKEFLAGS = --no-print-directory
 
 # CHANGE THIS PATHS
 # Original contract path
-CONTRACT = ./ExternalAbstract_v1.sol
+CONTRACT = ./ExternalCallConstructor_v1.sol
 # Contract with solcmc instrumentation path
 SOLCMC_CONTRACT = ./solcmc
 # Certora specifications path
