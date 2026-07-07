@@ -215,14 +215,14 @@ def gen(usecase_dir: Path) -> str:
         "specification": specification,
         "properties": md_property_list(skeleton['properties']),
         "versions": versions,
-        "ground_truth": """
-- [Ground truth](ground-truth.csv)
-- [Solcmc/z3](solcmc-z3.csv)
-- [Solcmc/Eldarica](solcmc-eld.csv)
-- [Certora](certora.csv)
-- [Halmos](halmos.csv)
-"""
-        # "ground_truth": mdtable.gen_from_csv(ground_truth_path)
+        #"ground_truth": """
+#- [Ground truth](ground-truth.csv)
+#- [Solcmc/z3](solcmc-z3.csv)
+#- [Solcmc/Eldarica](solcmc-eld.csv)
+#- [Certora](certora.csv)
+#- [Halmos](halmos.csv)
+#"""
+         "ground_truth": mdtable.gen_from_csv(ground_truth_path)
     }
 
     template = CLASSIC_TEMPLATE if versions else REGRESSION_TEMPLATE
