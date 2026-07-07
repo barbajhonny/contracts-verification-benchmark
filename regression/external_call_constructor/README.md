@@ -52,3 +52,10 @@ function f() public view{}
 | **v1** | FN         |
  
 
+
+### Halmos
+|        | z-equals-2 |
+|--------|------------|
+| **v1** | TP!        |
+ 
+
