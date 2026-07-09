@@ -2,7 +2,11 @@
 pragma solidity ^0.8.25;
 
 import "target/ExternalAbstract_v1.sol";
-import "forge-std/Test.sol";
+
+interface IHalmosVM {
+    function store(address target, bytes32 slot, bytes32 value) external;
+    function assume(bool condition) external pure;
+}
 
 contract Attacker is D {
     ExternalAbstract public target;
@@ -16,9 +20,11 @@ contract Attacker is D {
     }
 }
 
-contract ExternalAbstractReentrancyTest is Test {
+contract ExternalAbstractReentrancyTest {
     ExternalAbstract target;
     Attacker attacker;
+
+    IHalmosVM constant vm = IHalmosVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
     uint256 constant X_SLOT = 0;
     uint256 constant D_SLOT = 1;
