@@ -3,7 +3,7 @@ ab-eq-ac,v1,P!
 c-equals-a,v1,N!
 call-failure,v1,N!
 call-success,v1,N!
-check-mutex,v1,N!
+check-mutex,v1,P!
 correct-modulo-ab,v1,P!
 correct-modulo-ac,v1,P!
 f-reentrancy-view-x,v1,P!
