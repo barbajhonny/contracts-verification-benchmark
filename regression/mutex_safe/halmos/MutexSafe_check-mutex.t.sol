@@ -5,12 +5,19 @@ import"target/MutexSafe_v1.sol";
 
 contract MutexSafeTest is MutexSafe{
 
-    function check_check_mutex(address attacker) public{
+    function check_check_mutex() public{
 
         set(10);
-        f(attacker);
+
+        f(address(this));
+        
         assert(getX()==10);
 
+    }
+
+     fallback() external payable {
+        // Rientriamo nella funzione set modificando il valore
+        set(999);
     }
 
 }
