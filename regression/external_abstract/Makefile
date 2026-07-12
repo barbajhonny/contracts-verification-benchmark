@@ -123,7 +123,8 @@ $(HALMOS_CM): $(GROUND_TRUTH) $(HALMOS_OUT)
 
 $(HALMOS_OUT): setup
 	@echo "Running Halmos experiments..."
-	@$(PYTHON) ../../scripts/run_halmos.py --contracts $(CONTRACT) --output $(HALMOS_DIR)
+	@$(PYTHON) ../../scripts/run_halmos.py --contracts $(CONTRACT) --output $(HALMOS_DIR) --timeout $(to)
+
 
 #---------------------------- SETUP ------------------------------#
 setup: $(Z3_LOGS) $(ELD_LOGS) $(CERTORA_LOGS) $(HALMOS_LOGS)
