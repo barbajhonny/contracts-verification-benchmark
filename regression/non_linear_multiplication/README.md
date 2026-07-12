@@ -68,3 +68,10 @@ The `NonLinearMult` contract is designed to perform multiplication operations us
 | **v1** | TP!               | TP!               | TP!               |
  
 
+
+### Halmos
+|        | ab-eq-ac          | correct-modulo-ab | correct-modulo-ac |
+|--------|-------------------|-------------------|-------------------|
+| **v1** | TP!               | TP!               | TP!               |
+ 
+
