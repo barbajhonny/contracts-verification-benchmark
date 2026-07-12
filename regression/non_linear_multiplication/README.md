@@ -42,11 +42,10 @@ The `NonLinearMult` contract is designed to perform multiplication operations us
 - **correct-modulo-ac**: the output of ac should be always divisible by 3
 
 ## Ground truth
-
-- [Ground truth](ground-truth.csv)
-- [Solcmc/z3](solcmc-z3.csv)
-- [Solcmc/Eldarica](solcmc-eld.csv)
-- [Certora](certora.csv)
+|        | ab-eq-ac          | correct-modulo-ab | correct-modulo-ac |
+|--------|-------------------|-------------------|-------------------|
+| **v1** | 1                 | 1                 | 1                 |
+ 
 
 ## Experiments
 ### SolCMC
