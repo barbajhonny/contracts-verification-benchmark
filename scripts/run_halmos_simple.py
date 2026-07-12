@@ -9,6 +9,9 @@ def main():
                         help="version of the contract over which to run the experiments")
     parser.add_argument('--property', action='store', required=False, type=str,
                         help="property of the contract over which to run the experiments")
+    # Aggiunto sulla falsariga di solcmc_simple
+    parser.add_argument('--timeout', action='store', required=False, default="600",
+                        help="timeout for each verification task")
 
     args = parser.parse_args()
 
@@ -22,6 +25,9 @@ def main():
 
     if args.property:
         args_halmos += ["--property", args.property]
+        
+    if args.timeout:
+        args_halmos += ["--timeout", args.timeout]
 
     run_halmos.main(args_halmos)
 
