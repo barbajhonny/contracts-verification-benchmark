@@ -49,3 +49,10 @@ This contract is vulnerable to reentrancy attack, however the function `s` is a 
 | **v1** | TP!                 |
  
 
+
+### Halmos
+|        | f-reentrancy-view-x |
+|--------|---------------------|
+| **v1** | TP!                 |
+ 
+

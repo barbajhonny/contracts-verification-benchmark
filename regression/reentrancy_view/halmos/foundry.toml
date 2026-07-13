@@ -1,0 +1,9 @@
+[profile.default]
+src = '../ReentrancyV*'
+test = '.'
+out = 'out'
+libs = ['../../../lib']
+
+remappings = [
+    'target/=../',
+]
