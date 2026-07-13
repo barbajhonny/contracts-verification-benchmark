@@ -1,0 +1,9 @@
+[profile.default]
+src = '../C_v1*'
+test = '.'
+out = 'out'
+libs = ['../../../lib']
+
+remappings = [
+    'target/=../',
+]
