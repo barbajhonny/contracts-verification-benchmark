@@ -2,7 +2,7 @@ MAKEFLAGS = --no-print-directory
 
 # CHANGE THIS PATHS
 # Original contract path
-CONTRACT = ./Payable_v1.sol
+CONTRACT = ./Reentrancy_v1.sol
 # Contract with solcmc instrumentation path
 SOLCMC_CONTRACT = ./solcmc
 # Certora specifications path
