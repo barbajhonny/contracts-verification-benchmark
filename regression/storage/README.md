@@ -48,3 +48,10 @@ The contract `Storage` has two functions `f` and `sum`:
 | **v1** | TP!                               |
  
 
+
+### Halmos
+|        | equivalent-operations-same-result |
+|--------|-----------------------------------|
+| **v1** | TP!                               |
+ 
+
