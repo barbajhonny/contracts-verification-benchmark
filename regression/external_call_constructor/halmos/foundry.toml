@@ -1,5 +1,5 @@
 [profile.default]
-src = '../'
+src = '../ExternalCallConstructor_v*'
 test = '.'
 out = 'out'
 libs = ['../../../lib']

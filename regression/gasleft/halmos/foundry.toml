@@ -1,5 +1,5 @@
 [profile.default]
-src = '../'
+src = '../GasLeft_v*'
 test = '.'
 out = 'out'
 libs = ['../../../lib']

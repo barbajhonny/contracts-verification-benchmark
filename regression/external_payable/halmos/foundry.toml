@@ -1,5 +1,5 @@
 [profile.default]
-src = '../'
+src = '../ExternalPayable_v*'
 test = '.'
 out = 'out'
 libs = ['../../../lib']
