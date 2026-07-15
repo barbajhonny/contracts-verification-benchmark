@@ -9,7 +9,19 @@ import sys
 import re
 import utils
 
-def run_halmos_for_task(p, v, halmos_dir, output_dir):
+DEFAULT_TIMEOUT = '10m'
+
+def parse_timeout_to_seconds(timeout_str):
+    try:
+        if timeout_str.endswith('m'):
+            return int(timeout_str[:-1]) * 60
+        elif timeout_str.endswith('s'):
+            return int(timeout_str[:-1])
+        return int(timeout_str)
+    except ValueError:
+        return 600
+
+def run_halmos_for_task(p, v, halmos_dir, output_dir, timeout_seconds):
     """
     Executes Halmos for a specific property and version, then parses the text output.
     Saves dedicated execution log files inside the build artifacts directory.
@@ -18,8 +30,14 @@ def run_halmos_for_task(p, v, halmos_dir, output_dir):
     print(f"Running Halmos verification for property: '{p}', version: '{v}'...")
     
     try:
-        # Execute Halmos capturing both stdout and stderr
-        halmos_res = subprocess.run(["halmos"], cwd=halmos_dir, capture_output=True, text=True)
+        # Execute Halmos capturing both stdout and stderr with strict timeout
+        halmos_res = subprocess.run(
+            ["halmos", "--solver-timeout-assertion", "120000"],
+            cwd=halmos_dir, 
+            capture_output=True, 
+            text=True,
+            timeout=timeout_seconds
+        )
         output = halmos_res.stdout + halmos_res.stderr
         
         logs_dir = Path(output_dir).joinpath("logs")
@@ -47,15 +65,31 @@ def run_halmos_for_task(p, v, halmos_dir, output_dir):
                 elif "fail" in clean_output.lower():
                     return utils.STRONG_NEGATIVE
             return utils.UNKNOWN
+            
+    except subprocess.TimeoutExpired as e:
+        print(f"Timeout expired for Halmos on {p} ({v}) after {e.timeout} seconds.")
+        logs_dir = Path(output_dir).joinpath("logs")
+        logs_dir.mkdir(parents=True, exist_ok=True)
+        log_filename = f"{v}_{p}.log"
+        
+        partial_output = ""
+        if e.stdout:
+            partial_output += e.stdout if isinstance(e.stdout, str) else e.stdout.decode()
+        if e.stderr:
+            partial_output += e.stderr if isinstance(e.stderr, str) else e.stderr.decode()
+            
+        utils.write_log(logs_dir.joinpath(log_filename), partial_output + "\n[SCRIPT TIMEOUT EXPIRED]")
+        return utils.ERROR 
         
     except Exception as e:
         print(f"Error during Halmos execution for {p}: {e}")
-        return utils.ERROR                # Maps to 'ERR'
+        return utils.ERROR  # Maps to 'ERR'
     
 def main(args_list=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--contracts', '-c', help='Contracts file or directory.', required=True)
     parser.add_argument('--output', '-o', help='Output directory.', required=True)
+    parser.add_argument('--timeout', '-t', help='Timeout time.', required=False)  # Aggiunto come in solcmc
     parser.add_argument('--version', '-v', help='Run on this version only.', required=False)
     parser.add_argument('--property', '-p', help='Run on this property only.', required=False)
     
@@ -67,6 +101,10 @@ def main(args_list=None):
     output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
     halmos_dir = Path("./halmos")
+    
+    # Timeout
+    timeout = args.timeout if args.timeout else DEFAULT_TIMEOUT
+    timeout_seconds = parse_timeout_to_seconds(timeout)
     
     tasks = []
     
@@ -87,8 +125,7 @@ def main(args_list=None):
 
     current_results = {}
     for p, v in tasks:
-        # Pass both directories: halmos_dir for context execution, output_dir for clean log writing
-        res = run_halmos_for_task(p, v, halmos_dir, output_dir)
+        res = run_halmos_for_task(p, v, halmos_dir, output_dir, timeout_seconds)
         current_results[(p, v)] = res
 
     out_csv_path = output_dir.joinpath('out.csv')
