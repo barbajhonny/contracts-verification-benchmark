@@ -9,7 +9,6 @@ def main():
                         help="version of the contract over which to run the experiments")
     parser.add_argument('--property', action='store', required=False, type=str,
                         help="property of the contract over which to run the experiments")
-    # Aggiunto sulla falsariga di solcmc_simple
     parser.add_argument('--timeout', action='store', required=False, default="600",
                         help="timeout for each verification task")
 
