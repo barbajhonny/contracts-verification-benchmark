@@ -44,7 +44,6 @@ def run_halmos_for_task(p, v, halmos_dir, output_dir, timeout_seconds):
         logs_dir.mkdir(parents=True, exist_ok=True)
         log_filename = f"{v}_{p}.log"
         utils.write_log(logs_dir.joinpath(log_filename), output)
-        # ---------------------------------------------------
         
         # Strip ANSI escape color codes from the terminal output to get clean text
         ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
@@ -87,9 +86,10 @@ def run_halmos_for_task(p, v, halmos_dir, output_dir, timeout_seconds):
     
 def main(args_list=None):
     parser = argparse.ArgumentParser()
+    parser.add_argument('--halmos-dir', '-hd', help='Halmos working directory.', required=False)
     parser.add_argument('--contracts', '-c', help='Contracts file or directory.', required=True)
     parser.add_argument('--output', '-o', help='Output directory.', required=True)
-    parser.add_argument('--timeout', '-t', help='Timeout time.', required=False)  # Aggiunto come in solcmc
+    parser.add_argument('--timeout', '-t', help='Timeout time.', required=False)
     parser.add_argument('--version', '-v', help='Run on this version only.', required=False)
     parser.add_argument('--property', '-p', help='Run on this property only.', required=False)
     
@@ -98,11 +98,15 @@ def main(args_list=None):
     else:
         args = parser.parse_args()
 
+    # ---- HALMOS_DIR ----
+    if args.halmos_dir:
+        halmos_dir = Path(args.halmos_dir)
+    else:
+        halmos_dir = Path("./halmos")
+
     output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
-    halmos_dir = Path("./halmos")
     
-    # Timeout
     timeout = args.timeout if args.timeout else DEFAULT_TIMEOUT
     timeout_seconds = parse_timeout_to_seconds(timeout)
     
@@ -112,17 +116,20 @@ def main(args_list=None):
         v = args.version if args.version else 'v1'
         tasks.append((args.property, v))
     else:
-        gt_path = Path("./ground-truth.csv")
+        # Search for ground-truth.csv first in ../ and then in ./
+        gt_path = Path("../ground-truth.csv")
+        if not gt_path.exists():
+            gt_path = Path("./ground-truth.csv")
         if gt_path.exists():
             with open(gt_path, 'r') as f:
                 reader = csv.reader(f)
-                next(reader)  # Skip CSV header
+                next(reader)
                 for row in reader:
                     if row and len(row) >= 2:
                         tasks.append((row[0], row[1]))
         else:
             tasks.append(("unknown-property", "v1"))
-
+            
     current_results = {}
     for p, v in tasks:
         res = run_halmos_for_task(p, v, halmos_dir, output_dir, timeout_seconds)
