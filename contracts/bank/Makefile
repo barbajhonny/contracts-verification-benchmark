@@ -7,6 +7,11 @@ CERTORA_DIR = ./certora
 CERTORA_BUILD_DIR = $(CERTORA_DIR)/build
 CERTORA_TABLE = $(CERTORA_BUILD_DIR)/table.md
 
+# Variabili per Halmos
+HALMOS_DIR = ./halmos
+HALMOS_BUILD_DIR = $(HALMOS_DIR)/build
+HALMOS_TABLE = $(HALMOS_BUILD_DIR)/halmos/table.md
+
 VERSIONS_DIR = ./versions
 SKELETON = ./skeleton.json
 GROUND_TRUTH = ./ground-truth.csv
@@ -14,9 +19,9 @@ README = README.md
 
 PYTHON = python
 
-.PHONY: all certora solcmc plain clean cleanr clean-solcmc clean-certora
+.PHONY: all certora solcmc halmos plain clean cleanr clean-solcmc clean-certora clean-halmos
 
-all: plain solcmc certora
+all: plain solcmc certora halmos
 	@echo "Adding Solcmc table to README..."
 	@echo "### SolCMC" >> $(README)
 	@cat $(SOLCMC_Z3_TABLE) >> $(README)
@@ -24,6 +29,9 @@ all: plain solcmc certora
 	@echo "" >> $(README)
 	@echo "Adding Certora table to README..."
 	@cat $(CERTORA_TABLE) >> $(README)
+	@echo "" >> $(README)
+	@echo "Adding Halmos table to README..."
+	@cat $(HALMOS_TABLE) >> $(README)
 
 #---------------------------- CERTORA ----------------------------#
 certora: $(CERTORA_TABLE)
@@ -40,6 +48,12 @@ $(SOLCMC_Z3_TABLE):
 $(SOLCMC_ELD_TABLE):
 	@cd $(realpath $(SOLCMC_DIR)) && make solver=eld
 
+#---------------------------- HALMOS -----------------------------#
+halmos: $(HALMOS_TABLE)
+
+$(HALMOS_TABLE):
+	@cd $(realpath $(HALMOS_DIR)) && make
+
 #---------------------------- README -----------------------------#
 plain: cleanr $(README)
 	
@@ -49,7 +63,8 @@ $(README): $(VERSIONS_DIR) $(SKELETON) $(GROUND_TRUTH)
 	# @echo "## Experiments" >> $(README)
 
 #---------------------------- CLEAN ------------------------------#
-clean: cleanr clean-solcmc clean-certora
+# Aggiunta la pulizia di Halmos
+clean: cleanr clean-solcmc clean-certora clean-halmos
 
 cleanr:
 	rm -f $(README)
@@ -59,3 +74,6 @@ clean-solcmc:
 
 clean-certora:
 	cd $(realpath $(CERTORA_DIR)) && make clean
+
+clean-halmos:
+	cd $(realpath $(HALMOS_DIR)) && make clean
