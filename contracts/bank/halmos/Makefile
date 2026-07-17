@@ -1,6 +1,8 @@
 # Params
 to = 10m
 contract = ""
+PROPERTY = ""
+VERSION = ""
 
 # Input files
 VERSIONS_DIR = ../versions/
@@ -45,14 +47,30 @@ $(OUT): setup $(PROPERTIES_FILES) $(VERSIONS_FILES)
 		    --halmos-dir $(CONTRACTS_DIR); \
 	done
 
+#---------------------------- ONE --------------------------------#
 one: setup
-	$(PYTHON) ../../../scripts/run_halmos.py --contracts $(CONTRACTS_DIR)/$(contract) --output $(OUTPUT_DIR) --timeout $(to)
+	@echo "Running single test: $(PROPERTY) ($(VERSION))"
+	$(PYTHON) ../../../scripts/run_halmos.py \
+	    --contracts $(CONTRACTS_DIR) \
+	    --output $(OUTPUT_DIR) \
+	    --timeout $(to) \
+	    --halmos-dir $(CONTRACTS_DIR) \
+	    --property $(PROPERTY) \
+	    --version $(VERSION)
 
-	#---------------------------- SETUP ------------------------------#
+#---------------------------- ONE-PROPERTY-ALL-VERSIONS -----------------------------#
+one-property-all-versions:
+	@echo "Running $(PROPERTY) on all versions..."
+	@for version in $(notdir $(VERSIONS_FILES:.sol=)); do \
+		$(MAKE) one PROPERTY=$(PROPERTY) VERSION=$$version; \
+	done
+	
+#---------------------------- SETUP ------------------------------#
 setup: contracts directories
 
 contracts: $(PROPERTIES_FILES) $(CONTRACTS_DIR)
 	@echo "Generating version-specific test files for Halmos..."
+	@cp ./foundry.toml $(CONTRACTS_DIR)/
 	@for ver_file in $(notdir $(VERSIONS_FILES)); do \
 		ver_name=$${ver_file%.sol}; \
 		for prop_file in $(PROPERTIES_FILES); do \
