@@ -8,7 +8,6 @@ contract MutexUnsafeTest is MutexUnsafe {
     function check_check_mutex() public {
         set(10);
 
-        // Passiamo l'indirizzo di questo contratto stesso come "attaccante"
         f(address(this));
 
         assert(getX() == 10);
@@ -16,7 +15,6 @@ contract MutexUnsafeTest is MutexUnsafe {
 
     // Questa funzione intercetta la chiamata _a.call("aaaaa") inviata a address(this)
     fallback() external payable {
-        // Reentrancy nella funzione set modificando il valore
         set(999);
     }
 }
