@@ -7,7 +7,7 @@ CERTORA_DIR = ./certora
 CERTORA_BUILD_DIR = $(CERTORA_DIR)/build
 CERTORA_TABLE = $(CERTORA_BUILD_DIR)/table.md
 
-# Variabili per Halmos
+# Halmos
 HALMOS_DIR = ./halmos
 HALMOS_BUILD_DIR = $(HALMOS_DIR)/build
 HALMOS_TABLE = $(HALMOS_BUILD_DIR)/halmos/table.md
@@ -63,7 +63,6 @@ $(README): $(VERSIONS_DIR) $(SKELETON) $(GROUND_TRUTH)
 	# @echo "## Experiments" >> $(README)
 
 #---------------------------- CLEAN ------------------------------#
-# Aggiunta la pulizia di Halmos
 clean: cleanr clean-solcmc clean-certora clean-halmos
 
 cleanr:
