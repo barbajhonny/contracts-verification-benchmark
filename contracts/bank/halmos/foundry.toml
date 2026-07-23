@@ -2,9 +2,9 @@
 src = '.'
 test = '.'
 out = 'out'
-libs = ['../../../lib']
+libs = ['lib']
 
 remappings = [
-    'target=/home/giovanni/tirocinio/contracts-verification-benchmark/contracts/bank/versions/',
-    'forge-std=/home/giovanni/tirocinio/contracts-verification-benchmark/lib/forge-std/src/'
+    'target/=versions/',
+    'lib/=lib/'
 ]
