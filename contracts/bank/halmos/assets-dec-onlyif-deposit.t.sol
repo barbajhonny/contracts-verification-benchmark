@@ -1,47 +1,49 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity >= 0.8.2;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.25;
 
 import "target/{{VERSION}}.sol";
 
-// Interfaccia standard per i cheatcode di Foundry/Halmos
-interface Vm {
-    function deal(address account, uint256 newBalance) external;
-    function prank(address sender) external;
+interface IHalmosVM {
+    function assume(bool condition) external;
+}
+
+contract Sink {
+    receive() external payable {}
 }
 
 contract BankTest {
-    // Istanziamo la VM all'indirizzo standard di Foundry
-    Vm constant vm = Vm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
-    
-    // Dichiariamo il contratto della banca (usando il segnaposto)
-    Bank bank;
+    Bank public bank;
+    Sink public sink;
+    IHalmosVM constant vm = IHalmosVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
-    function check_assets_dec_onlyif_deposit(address owner) public {
-        // Evitiamo che l'owner sia l'indirizzo zero o il contratto stesso per non sballare i test
-        require(owner != address(0));
-        require(owner != address(this));
-        require(owner != address(bank));
+    function setUp() public {
+        {{CONSTRUCTOR_SETUP}};
+        sink = new Sink();
+    }
 
-        // Inizializziamo il contratto bancario specifico per questa esecuzione
-        bank = new Bank();
+    // Reentrancy: svuota il saldo nel sink
+    receive() external payable {
+        (bool success, ) = address(sink).call{value: address(this).balance}("");
+    }
 
-        // Prepariamo i saldi simbolici
-        vm.deal(owner, 4);
-        vm.deal(address(this), 2);
+    function check_assets_dec_onlyif_deposit(uint256 amount, uint8 choice) public {
+        vm.assume(amount > 0);
+        vm.assume(amount < 100 ether);
+        vm.assume(choice <= 1);
 
-        // Eseguiamo il deposito come "owner" nel contratto bank
-        vm.prank(owner);
-        bank.deposit{value: 1}();
+        uint256 oldBalance = address(this).balance;
 
-        uint256 balance_before = owner.balance;
+        if (choice == 0) {
+            bank.deposit{value: amount}();
+        } else {
+            bank.deposit{value: amount}();
+            bank.withdraw(amount);
+        }
 
-        // Eseguiamo il withdraw come "owner" nel contratto bank
-        vm.prank(owner);
-        bank.withdraw(1);
+        uint256 newBalance = address(this).balance;
 
-        uint256 balance_after = owner.balance;
-
-        // Proprietà: il saldo dell'owner non deve essere diminuito dopo il withdraw
-        assert(balance_after >= balance_before);
+        if (newBalance < oldBalance) {
+            assert(choice == 0);
+        }
     }
 }
