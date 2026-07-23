@@ -1,8 +1,5 @@
 # Params
 to = 10m
-contract = ""
-PROPERTY = ""
-VERSION = ""
 
 # Input files
 VERSIONS_DIR = ../versions/
@@ -25,7 +22,7 @@ PYTHON = python
 
 .PHONY: run one setup contracts directories clean
 
-#---------------------------- RUN --------------------------------#
+#---------------------------- RUN (batch) --------------------------------#
 run: $(TABLE)
 
 $(TABLE): $(CM)
@@ -39,44 +36,47 @@ $(CM): $(GROUND_TRUTH) $(OUT)
 
 $(OUT): setup $(PROPERTIES_FILES) $(VERSIONS_FILES)
 	@echo "Running Halmos experiments..."
-	@for test_file in $(CONTRACTS_DIR)/*.t.sol; do \
-		$(PYTHON) ../../../scripts/run_halmos.py \
-		    --contracts $$test_file \
-		    --output $(OUTPUT_DIR) \
-		    --timeout $(to) \
-		    --halmos-dir $(CONTRACTS_DIR); \
-	done
-
-#---------------------------- ONE --------------------------------#
-one: setup
-	@echo "Running single test: $(PROPERTY) ($(VERSION))"
-	$(PYTHON) ../../../scripts/run_halmos.py \
+	@$(PYTHON) ../../../scripts/run_halmos.py \
 	    --contracts $(CONTRACTS_DIR) \
 	    --output $(OUTPUT_DIR) \
 	    --timeout $(to) \
-	    --halmos-dir $(CONTRACTS_DIR) \
-	    --property $(PROPERTY) \
-	    --version $(VERSION)
+	    --halmos-dir $(CONTRACTS_DIR)
 
-#---------------------------- ONE-PROPERTY-ALL-VERSIONS -----------------------------#
-one-property-all-versions:
-	@echo "Running $(PROPERTY) on all versions..."
-	@for version in $(notdir $(VERSIONS_FILES:.sol=)); do \
-		$(MAKE) one PROPERTY=$(PROPERTY) VERSION=$$version; \
-	done
-	
+#---------------------------- ONE (singolo test) --------------------------------#
+# Uso: make one contract=build/contracts/v1_assets-dec-onlyif-deposit.t.sol
+one: setup
+	@if [ -z "$(contract)" ]; then \
+		echo "Error: 'contract' variable is not set."; \
+		echo "Usage: make one contract=build/contracts/v1_assets-dec-onlyif-deposit.t.sol"; \
+		exit 1; \
+	fi
+	@echo "Running single test: $(contract)"
+	@$(PYTHON) ../../../scripts/run_halmos.py \
+	    --contracts $(contract) \
+	    --output $(OUTPUT_DIR) \
+	    --timeout $(to) \
+	    --halmos-dir $(CONTRACTS_DIR)
+
 #---------------------------- SETUP ------------------------------#
 setup: contracts directories
 
-contracts: $(PROPERTIES_FILES) $(CONTRACTS_DIR)
+contracts: $(PROPERTIES_FILES) $(CONTRACTS_DIR) $(LIB_DIR)
 	@echo "Generating version-specific test files for Halmos..."
 	@cp ./foundry.toml $(CONTRACTS_DIR)/
+	@mkdir -p $(CONTRACTS_DIR)/versions
+	@cp -r $(LIB_DIR) $(CONTRACTS_DIR)/versions/lib
 	@for ver_file in $(notdir $(VERSIONS_FILES)); do \
 		ver_name=$${ver_file%.sol}; \
+		ver_short=$$(echo $$ver_name | sed 's/Bank_//'); \
+		cp $(VERSIONS_DIR)/$$ver_file $(CONTRACTS_DIR)/versions/$$ver_short.sol; \
 		for prop_file in $(PROPERTIES_FILES); do \
 			prop_name=$$(basename $$prop_file .t.sol); \
-			target_file=$(CONTRACTS_DIR)/$${ver_name}_$${prop_name}.t.sol; \
-			sed "s/{{VERSION}}/$$ver_name/g" $$prop_file > $$target_file; \
+			target_file=$(CONTRACTS_DIR)/$${ver_short}_$${prop_name}.t.sol; \
+			if [ "$$ver_short" = "v3" ]; then \
+				sed -e "s/{{VERSION}}/$$ver_short/g" -e "s/{{CONSTRUCTOR_SETUP}}/bank = new Bank(100 ether)/g" $$prop_file > $$target_file; \
+			else \
+				sed -e "s/{{VERSION}}/$$ver_short/g" -e "s/{{CONSTRUCTOR_SETUP}}/bank = new Bank()/g" $$prop_file > $$target_file; \
+			fi; \
 		done; \
 	done
 
@@ -90,6 +90,8 @@ $(LOGS_DIR):
 
 $(LIB_DIR):
 	@cp -r ../../../lib/ $@
+	@rm -f $@/ERC20v2.sol
+	@rm -f $@/ERC20v3.sol
 
 #---------------------------- CLEAN ------------------------------#
 clean:
