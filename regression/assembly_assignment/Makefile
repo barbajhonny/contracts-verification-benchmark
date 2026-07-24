@@ -7,6 +7,8 @@ CONTRACT = ./AssemblyAssignment_v1.sol
 SOLCMC_CONTRACT = ./solcmc
 # Certora specifications path
 CERTORA_SPEC = ./certora
+# Halmos tests path
+HALMOS_SPEC = ./halmos
 
 SKELETON = ./skeleton.json
 GROUND_TRUTH = ./ground-truth.csv
@@ -123,7 +125,7 @@ $(HALMOS_CM): $(GROUND_TRUTH) $(HALMOS_OUT)
 
 $(HALMOS_OUT): setup
 	@echo "Running Halmos experiments..."
-	@$(PYTHON) ../../scripts/run_halmos.py --contracts $(CONTRACT) --output $(HALMOS_DIR)
+	@$(PYTHON) ../../scripts/run_halmos.py --contracts $(CONTRACT) --halmos-dir $(HALMOS_SPEC) --output $(HALMOS_DIR) --timeout $(to)
 
 #---------------------------- SETUP ------------------------------#
 setup: $(Z3_LOGS) $(ELD_LOGS) $(CERTORA_LOGS) $(HALMOS_LOGS)
