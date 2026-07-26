@@ -1,12 +1,24 @@
 # Params
 to = 10m
+ver =                           # Filtro opzionale: es. ver=v1 oppure ver=1
+prop =                          # Filtro opzionale: es. prop=assets-dec-onlyif-deposit
+
+# Normalizzazione versione: garantisce il prefisso 'v' se inserito solo il numero (es: 1 -> v1)
+VER_NORMALIZED = $(if $(ver),$(if $(patsubst v%,%,$(ver)),v$(patsubst v%,%,$(ver)),$(ver)),)
 
 # Input files
-VERSIONS_DIR = ../versions/
+VERSIONS_DIR = ../versions
 PROPERTIES_DIR = .
 GROUND_TRUTH = ../ground-truth.csv
-PROPERTIES_FILES = $(wildcard $(PROPERTIES_DIR)/*.t.sol)
-VERSIONS_FILES = $(wildcard $(VERSIONS_DIR)/*.sol)
+
+# Selezione versioni e proprietà
+VERSIONS_FILES = $(if $(VER_NORMALIZED),\
+    $(wildcard $(VERSIONS_DIR)/Bank_$(VER_NORMALIZED).sol),\
+    $(wildcard $(VERSIONS_DIR)/*.sol))
+
+PROPERTIES_FILES = $(if $(prop),\
+    $(wildcard $(PROPERTIES_DIR)/$(prop).t.sol),\
+    $(wildcard $(PROPERTIES_DIR)/*.t.sol))
 
 # Output files
 BUILD_DIR = build
@@ -20,9 +32,9 @@ TABLE = $(OUTPUT_DIR)/table.md
 
 PYTHON = python
 
-.PHONY: run one setup contracts directories clean
+.PHONY: run setup contracts directories clean
 
-#---------------------------- RUN (batch) --------------------------------#
+#---------------------------- RUN --------------------------------#
 run: $(TABLE)
 
 $(TABLE): $(CM)
@@ -34,33 +46,20 @@ $(CM): $(GROUND_TRUTH) $(OUT)
 	@echo "Generating Halmos confusion matrix ($(CM))..."
 	@$(PYTHON) ../../../scripts/cm_gen.py --ground-truth $(GROUND_TRUTH) --results $(OUT) > $(CM)
 
-$(OUT): setup $(PROPERTIES_FILES) $(VERSIONS_FILES)
+$(OUT): setup
 	@echo "Running Halmos experiments..."
 	@$(PYTHON) ../../../scripts/run_halmos.py \
-	    --contracts $(CONTRACTS_DIR) \
-	    --output $(OUTPUT_DIR) \
-	    --timeout $(to) \
-	    --halmos-dir $(CONTRACTS_DIR)
-
-#---------------------------- ONE (singolo test) --------------------------------#
-# Uso: make one contract=build/contracts/v1_assets-dec-onlyif-deposit.t.sol
-one: setup
-	@if [ -z "$(contract)" ]; then \
-		echo "Error: 'contract' variable is not set."; \
-		echo "Usage: make one contract=build/contracts/v1_assets-dec-onlyif-deposit.t.sol"; \
-		exit 1; \
-	fi
-	@echo "Running single test: $(contract)"
-	@$(PYTHON) ../../../scripts/run_halmos.py \
-	    --contracts $(contract) \
-	    --output $(OUTPUT_DIR) \
-	    --timeout $(to) \
-	    --halmos-dir $(CONTRACTS_DIR)
+		--contracts $(CONTRACTS_DIR) \
+		--output $(OUTPUT_DIR) \
+		--timeout $(to) \
+		--halmos-dir $(CONTRACTS_DIR) \
+		$(if $(VER_NORMALIZED),--version $(VER_NORMALIZED),) \
+		$(if $(prop),--property $(prop),)
 
 #---------------------------- SETUP ------------------------------#
 setup: contracts directories
 
-contracts: $(PROPERTIES_FILES) $(CONTRACTS_DIR) $(LIB_DIR)
+ contracts: $(CONTRACTS_DIR) $(LIB_DIR)
 	@echo "Generating version-specific test files for Halmos..."
 	@cp ./foundry.toml $(CONTRACTS_DIR)/
 	@mkdir -p $(CONTRACTS_DIR)/versions
@@ -73,9 +72,13 @@ contracts: $(PROPERTIES_FILES) $(CONTRACTS_DIR) $(LIB_DIR)
 			prop_name=$$(basename $$prop_file .t.sol); \
 			target_file=$(CONTRACTS_DIR)/$${ver_short}_$${prop_name}.t.sol; \
 			if [ "$$ver_short" = "v3" ]; then \
-				sed -e "s/{{VERSION}}/$$ver_short/g" -e "s/{{CONSTRUCTOR_SETUP}}/bank = new Bank(100 ether)/g" $$prop_file > $$target_file; \
+				sed -e "s/{{VERSION}}/$$ver_short/g" \
+				    -e "s/contract BankTest/contract BankTest_$$ver_short/g" \
+				    -e "s/{{CONSTRUCTOR_SETUP}}/bank = new Bank(99 ether)/g" $$prop_file > $$target_file; \
 			else \
-				sed -e "s/{{VERSION}}/$$ver_short/g" -e "s/{{CONSTRUCTOR_SETUP}}/bank = new Bank()/g" $$prop_file > $$target_file; \
+				sed -e "s/{{VERSION}}/$$ver_short/g" \
+				    -e "s/contract BankTest/contract BankTest_$$ver_short/g" \
+				    -e "s/{{CONSTRUCTOR_SETUP}}/bank = new Bank()/g" $$prop_file > $$target_file; \
 			fi; \
 		done; \
 	done
