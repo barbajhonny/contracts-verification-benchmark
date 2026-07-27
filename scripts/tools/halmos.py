@@ -89,7 +89,7 @@ def run_halmos_for_task(p, v, halmos_dir, output_dir, timeout_seconds):
     if not check_test_exists_in_contracts(halmos_dir, clean_p):
         return utils.ERROR
 
-    print(f"Running Halmos verification for property: '{p}', version: ({v}) -> File: {target_file_path}")
+    print(f"Running Halmos verification for property: '{p}', version: ({v})")
 
     try:
         test_match = clean_p
