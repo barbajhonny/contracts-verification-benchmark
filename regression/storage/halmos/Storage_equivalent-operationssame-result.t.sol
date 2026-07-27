@@ -9,7 +9,7 @@ contract StorageTest is Storage{
 
         x = _initialX;
 
-        f(n);
+        f(n);    // after this call x should be equal to _initialX + n
 
         assert(x == sum(_initialX, n));
 

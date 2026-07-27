@@ -13,7 +13,7 @@ contract MutexUnsafeTest is MutexUnsafe {
         assert(getX() == 10);
     }
 
-    // Questa funzione intercetta la chiamata _a.call("aaaaa") inviata a address(this)
+    
     fallback() external payable {
         set(999);
     }

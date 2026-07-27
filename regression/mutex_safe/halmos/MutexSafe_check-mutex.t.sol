@@ -15,8 +15,8 @@ contract MutexSafeTest is MutexSafe{
 
     }
 
-     fallback() external payable {
-        // Rientriamo nella funzione set modificando il valore
+    fallback() external payable {
+
         set(999);
     }
 

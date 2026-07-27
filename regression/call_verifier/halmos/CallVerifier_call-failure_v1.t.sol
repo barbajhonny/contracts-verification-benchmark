@@ -16,7 +16,7 @@ contract CallVerifierTest {
         cv = new CallVerifier();
     }
 
-    // Proprietà 1: call-failure (ground-truth = 0)
+    // Property 1: call-failure (ground-truth = 0)
     function check_call_failure(address a) public {
         cv.f(a);
         bool success = vm.load(address(cv), bytes32(uint256(1))) != bytes32(0);

@@ -13,6 +13,7 @@ contract PayableTest {
 
     function setUp() public {
         target = new Payable();
+        // Set 100 wei to contract target
         vm.deal(address(target), 100);
     }
 
