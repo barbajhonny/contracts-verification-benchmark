@@ -1,7 +1,7 @@
 # Params
 to = 10m
-ver =                           # Filtro opzionale: es. ver=v1 oppure ver=1
-prop =                          # Filtro opzionale: es. prop=assets-dec-onlyif-deposit
+ver =                           # Optional usage: make run ver=v1 
+prop =                          # Optional usage: make run prop=assets-dec-onlyif-deposit
 
 # Normalizzazione versione: garantisce il prefisso 'v' se inserito solo il numero (es: 1 -> v1)
 VER_NORMALIZED = $(if $(ver),$(if $(patsubst v%,%,$(ver)),v$(patsubst v%,%,$(ver)),$(ver)),)
