@@ -62,7 +62,7 @@ $(OUT): setup
 
 #---------------------------- SETUP ------------------------------#
 setup: contracts directories
-
+	
  contracts: $(CONTRACTS_DIR) $(LIB_DIR)
 	@echo "Generating version-specific test files for Halmos..."
 	@cp ./foundry.toml $(CONTRACTS_DIR)/
@@ -74,14 +74,17 @@ setup: contracts directories
 		cp $(VERSIONS_DIR)/$$ver_file $(CONTRACTS_DIR)/versions/$$ver_short.sol; \
 		for prop_file in $(PROPERTIES_FILES); do \
 			prop_name=$$(basename $$prop_file .t.sol); \
-			target_file=$(CONTRACTS_DIR)/$${ver_short}_$${prop_name}.t.sol; \
+			prop_name_safe=$$(echo $$prop_name | sed 's/-/_/g'); \
+			target_file=$(CONTRACTS_DIR)/$${ver_short}_$${prop_name_safe}.t.sol; \
 			if [ "$$ver_short" = "v3" ]; then \
 				sed -e "s/{{VERSION}}/$$ver_short/g" \
-				    -e "s/contract BankTest/contract BankTest_$$ver_short/g" \
+				    -e "s/{{CONTRACT_NAME}}/BankTest_$${ver_short}_$${prop_name_safe}/g" \
+				    -e "s/contract BankTest/contract BankTest_$${ver_short}_$${prop_name_safe}/g" \
 				    -e "s/{{CONSTRUCTOR_SETUP}}/bank = new Bank(99 ether)/g" $$prop_file > $$target_file; \
 			else \
 				sed -e "s/{{VERSION}}/$$ver_short/g" \
-				    -e "s/contract BankTest/contract BankTest_$$ver_short/g" \
+				    -e "s/{{CONTRACT_NAME}}/BankTest_$${ver_short}_$${prop_name_safe}/g" \
+				    -e "s/contract BankTest/contract BankTest_$${ver_short}_$${prop_name_safe}/g" \
 				    -e "s/{{CONSTRUCTOR_SETUP}}/bank = new Bank()/g" $$prop_file > $$target_file; \
 			fi; \
 		done; \
