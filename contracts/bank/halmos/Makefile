@@ -11,7 +11,7 @@ VERSIONS_DIR = ../versions
 PROPERTIES_DIR = .
 GROUND_TRUTH = ../ground-truth.csv
 
-# Selezione versioni e proprietà
+# Selection of versions and properties
 VERSIONS_FILES = $(if $(VER_NORMALIZED),\
     $(wildcard $(VERSIONS_DIR)/Bank_$(VER_NORMALIZED).sol),\
     $(wildcard $(VERSIONS_DIR)/*.sol))
