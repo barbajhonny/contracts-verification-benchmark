@@ -25,7 +25,7 @@ contract BankTest {
         return uint256(value);
     }
 
-    
+    /// @notice Property: credit-dec-onlyif-withdraw
     function check_credit_dec_onlyif_withdraw(
         bool isWithdraw, 
         uint256 amount,

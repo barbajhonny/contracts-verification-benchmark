@@ -44,6 +44,7 @@ contract BankTest {
         {{CONSTRUCTOR_SETUP}};
     }
 
+    /// @notice Property: assets-dec-onlyif-deposit
     function check_assets_dec_onlyif_deposit(
         bool isDeposit,
         uint256 amount,

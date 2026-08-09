@@ -17,7 +17,8 @@ contract BankTest {
         {{CONSTRUCTOR_SETUP}};
     }
 
-    function check_assets_inc_onlyif_withdraw_solcmc_style(
+    /// @notice Property: assets-inc-onlyif-withdraw
+    function check_assets_inc_onlyif_withdraw(
         bool isWithdraw,
         uint256 amount,
         address caller,
