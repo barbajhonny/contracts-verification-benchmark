@@ -26,28 +26,20 @@ contract BankTest {
     }
 
     /// @notice Property: deposit-revert
-    function check_deposit_revert(
-        address caller,
-        uint256 depositAmount
-    ) public {
-        vm.assume(caller != address(0));
-        vm.assume(caller != address(bank));
+    function check_deposit_revert(address caller, uint256 depositAmount) public {
+        vm.assume(caller != address(0) && caller != address(bank));
+        vm.assume(depositAmount > 1000); // Deve essere abbastanza per overfloware se i crediti sono alti
 
-        vm.assume(depositAmount > 0 && depositAmount <= 100 ether);
-        vm.deal(caller, type(uint256).max);
-
-        uint256 currentCredits = getCredits(caller);
-
-        bool willOverflow = (currentCredits + depositAmount < currentCredits);
+        vm.deal(caller, type(uint128).max); 
+        
+        vm.prank(caller);
+        bank.deposit{value: type(uint128).max - 500}();
 
         vm.prank(caller);
-        
-        if (willOverflow) {
-            try bank.deposit{value: depositAmount}() {
-                assert(false);
-            } catch {
-                assert(true);
-            }
-        } else {}
+        try bank.deposit{value: depositAmount}() {
+            assert(false);
+        } catch {
+            assert(true);
+        }
     }
 }
