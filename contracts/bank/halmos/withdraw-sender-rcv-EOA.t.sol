@@ -23,9 +23,7 @@ contract BankTest {
         uint256 depositAmount,
         uint256 withdrawAmount
     ) public {
-        vm.assume(caller != address(0));
-        vm.assume(caller != address(bank));
-        vm.assume(caller != address(vm));
+        vm.assume(caller != address(0) && caller != address(bank));
         vm.assume(caller.code.length == 0); 
 
         vm.assume(depositAmount <= 1000 ether);
