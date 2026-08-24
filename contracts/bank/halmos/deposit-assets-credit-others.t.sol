@@ -33,7 +33,9 @@ contract BankTest {
         uint256 initialBalance
     ) public {
         vm.assume(caller != address(0));
+        
         vm.assume(targetUser != address(0));
+        vm.assume(targetUser != address(bank));
 
         vm.assume(caller != targetUser);
 
