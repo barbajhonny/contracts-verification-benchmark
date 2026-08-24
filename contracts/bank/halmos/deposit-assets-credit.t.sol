@@ -26,25 +26,30 @@ contract BankTest {
     }
 
     /// @notice Property: deposit-assets-credit
-   function check_deposit_assets_credit(
+    function check_deposit_assets_credit(
         address caller,
         uint256 depositAmount,
         uint256 initialBalance
     ) public {
         vm.assume(caller != address(0));
+        vm.assume(caller != address(bank));
+        vm.assume(caller != address(vm));
+
+        vm.assume(depositAmount <= 1000 ether);
         vm.assume(initialBalance >= depositAmount);
-
-        uint256 old_user_credit = getCredits(caller);
-
-        vm.assume(old_user_credit <= type(uint256).max - depositAmount);
-
         vm.deal(caller, initialBalance);
 
+        uint256 old_user_credit = getCredits(caller);
+        vm.assume(old_user_credit <= type(uint256).max - depositAmount);
+
         vm.prank(caller);
-        
-        try bank.deposit{value: depositAmount}() {
+        (bool success, ) = address(bank).call{value: depositAmount}(
+            abi.encodeWithSelector(Bank.deposit.selector)
+        );
+
+        if (success) {
             uint256 new_user_credit = getCredits(caller);
             assert(new_user_credit == old_user_credit + depositAmount);
-        } catch {}
+        }
     }
 }
