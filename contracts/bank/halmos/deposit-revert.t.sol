@@ -28,18 +28,18 @@ contract BankTest {
     /// @notice Property: deposit-revert
     function check_deposit_revert(address caller, uint256 depositAmount) public {
         vm.assume(caller != address(0) && caller != address(bank));
-        vm.assume(depositAmount > 1000); // Deve essere abbastanza per overfloware se i crediti sono alti
+        vm.assume(depositAmount > 1000); 
 
         vm.deal(caller, type(uint128).max); 
         
         vm.prank(caller);
         bank.deposit{value: type(uint128).max - 500}();
 
-        vm.prank(caller);
-        try bank.deposit{value: depositAmount}() {
-            assert(false);
-        } catch {
-            assert(true);
-        }
+       vm.prank(caller);
+        (bool success, ) = address(bank).call{value: depositAmount}(
+            abi.encodeWithSelector(Bank.deposit.selector)
+        );
+        assert(!success);
+    
     }
 }
