@@ -31,10 +31,6 @@ contract BankTest {
 
         // Deposit
         vm.prank(caller);
-        (bool success,) = address(bank).call{value: depositAmount}(
-            abi.encodeWithSelector(Bank.deposit.selector)
-        );
-
-        assert(success);
+        bank.deposit{value: depositAmount}();
     }
 }
