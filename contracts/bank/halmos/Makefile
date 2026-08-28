@@ -31,7 +31,7 @@ CM = $(OUTPUT_DIR)/cm.csv
 TABLE = $(OUTPUT_DIR)/table.md
 
 # Path to bank/
-ROOT_BANK_CM_HALMOS_CSV = ../halmos.csv
+ROOT_BANK_HALMOS_CSV = ../halmos.csv
 
 PYTHON = python
 
@@ -48,7 +48,7 @@ $(TABLE): $(CM)
 $(CM): $(GROUND_TRUTH) $(OUT)
 	@echo "Generating Halmos confusion matrix ($(CM))..."
 	@$(PYTHON) ../../../scripts/cm_gen.py --ground-truth $(GROUND_TRUTH) --results $(OUT) > $(CM)
-	# @cp -f $(CM) $(ROOT_BANK_CM_HALMOS_CSV)
+	@cp -f $(OUT) $(ROOT_BANK_HALMOS_CSV)
 
 $(OUT): setup
 	@echo "Running Halmos experiments..."
