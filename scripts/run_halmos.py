@@ -96,7 +96,8 @@ def main(args_list=None):
 
     out_csv = [utils.OUT_HEADER] + existing_rows
     for (p, v), res in current_results.items():
-        out_csv.append([p, v, res])
+        if str(res).upper() not in ["ERR"]:
+            out_csv.append([p, v, res])
 
     with open(out_csv_path, 'w', newline='') as f:
         writer = csv.writer(f)
