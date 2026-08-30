@@ -25,7 +25,9 @@ contract VaultTest {
         address caller,
         bool inReqState
     ) public {
-        vm.assume(caller != address(0) && caller != address(vault) && caller != address(vm));
+        vm.assume(caller != address(0));
+        vm.assume(caller != address(vault));
+        vm.assume(caller != address(vm));
 
         if (inReqState) {
             vm.deal(address(vault), 10 ether);
