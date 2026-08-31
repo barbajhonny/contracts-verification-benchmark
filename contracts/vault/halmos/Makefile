@@ -48,7 +48,7 @@ $(TABLE): $(CM)
 $(CM): $(GROUND_TRUTH) $(OUT)
 	@echo "Generating Halmos confusion matrix ($(CM))..."
 	@$(PYTHON) ../../../scripts/cm_gen.py --ground-truth $(GROUND_TRUTH) --results $(OUT) > $(CM)
-	#@cp -f $(OUT) $(ROOT_VAULT_HALMOS_CSV)
+	@cp -f $(OUT) $(ROOT_VAULT_HALMOS_CSV)
 
 $(OUT): setup
 	@echo "Running Halmos experiments..."
