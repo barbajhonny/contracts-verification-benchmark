@@ -19,8 +19,6 @@ contract VaultTest {
     uint256 constant WAIT_TIME = 10;
 
     /// @notice Property: cancel-not-revert
-    /// @dev A cancel() transaction does not revert if the sender is the
-    ///      recovery key and the Vault is in the REQ state.
     function check_cancel_not_revert(
         address recoveryKey,
         address receiver,
@@ -33,19 +31,14 @@ contract VaultTest {
         vm.assume(initialBalance > 0 && initialBalance <= 100 ether);
         vm.assume(withdrawAmount > 0 && withdrawAmount <= initialBalance);
 
-        // 1. Deploy del Vault
         vm.prank(OWNER);
         vault = new Vault(payable(recoveryKey), WAIT_TIME);
 
-        // 2. Finanziamento diretto del contratto
         vm.deal(address(vault), initialBalance);
 
-        // 3. Richiesta di prelievo per portare il contratto in stato REQ
         vm.prank(OWNER);
         vault.withdraw(receiver, withdrawAmount);
 
-        // 4. Esecuzione diretta di cancel() con la recovery key
-        // Halmos verificherà direttamente se questa transazione fa revert o meno.
         vm.prank(recoveryKey);
         vault.cancel();
     }
