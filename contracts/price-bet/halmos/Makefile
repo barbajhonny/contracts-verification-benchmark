@@ -1,7 +1,7 @@
 # Params
 to = 10m
-ver =                                     # Optional usage: make run ver=v1 
-prop =                                    # Optional usage: make run prop=cancel-revert
+ver =                                   # Optional usage: make run ver=v1 
+prop =                                  # Optional usage: make run prop=join-balance-eq
 
 # Version normalization: guarantees the 'v' prefix if only the number is entered (e.g. 1 -> v1)
 VER_NORMALIZED = $(if $(ver),$(if $(patsubst v%,%,$(ver)),v$(patsubst v%,%,$(ver)),$(ver)),)
@@ -11,7 +11,7 @@ VERSIONS_DIR = ../versions
 PROPERTIES_DIR = .
 GROUND_TRUTH = ../ground-truth.csv
 
-# Selection of versions and properties (Adattato per PriceBet)
+# Selection of versions and properties 
 VERSIONS_FILES = $(if $(VER_NORMALIZED),\
     $(wildcard $(VERSIONS_DIR)/PriceBet_$(VER_NORMALIZED).sol),\
     $(wildcard $(VERSIONS_DIR)/PriceBet_*.sol))
