@@ -13,6 +13,7 @@ contract PriceBetTest {
 
     IHalmosVM constant vm = IHalmosVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
+    /// @notice Property: join-balance-eq
     function check_join_balance_eq(
         uint256 initialPot,
         uint256 timeout,
