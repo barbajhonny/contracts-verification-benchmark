@@ -32,8 +32,7 @@ contract PriceBetTest {
         vm.assume(blockJump < timeout);
         
         address owner = address(this);
-        vm.assume(owner != player); // owner e player sono diversi
-
+        vm.assume(owner != player); // owner & player are different!!
         uint256 deploymentBlock = block.number;
 
         // Setup
