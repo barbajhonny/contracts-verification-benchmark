@@ -51,19 +51,19 @@ contract PriceBetTest {
 
         uint256 ownerBalanceBefore = owner.balance;
 
-        // Owner fires transactions 
-        vm.prank(owner);
-
         // TEST 1: owner calls timeout()
+        vm.prank(owner);
         try priceBet.timeout() {} catch {}
 
         // TEST 2: owner calls win()
+        vm.prank(owner);
         try priceBet.win() {} catch {}
 
         // TEST 3: owner calls join()
         vm.deal(owner, initialPot);
+        vm.prank(owner);
         try priceBet.join{value: initialPot}() {} catch {}
 
-        assert(owner.balance == ownerBalanceBefore);
+        assert(owner.balance <= ownerBalanceBefore);
     }
 }
