@@ -22,9 +22,9 @@ contract PriceBetTest {
         address player2,
         uint256 playerDeposit
     ) public {
-        vm.assume(initialPot > 0 && initialPot < 10**24);
-        vm.assume(playerDeposit >= initialPot && playerDeposit < 10**24);
-        vm.assume(timeout > 0 && timeout < 1000000);
+        vm.assume(initialPot > 0);
+        vm.assume(playerDeposit >= initialPot);
+        vm.assume(timeout > 0);
         vm.assume(player1 != address(0));
         vm.assume(player2 != address(0));
         vm.assume(player1 != player2);

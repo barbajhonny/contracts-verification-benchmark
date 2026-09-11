@@ -23,14 +23,11 @@ contract PriceBetTest {
         uint256 deposit,
         uint256 blockJump
     ) public {
-        vm.assume(initialPot > 0 && initialPot < 10**24);
-        vm.assume(timeout > 0 && timeout < 1000000);
-        vm.assume(exchangeRate > 0 && exchangeRate < 10**24);
+        vm.assume(initialPot > 0 );
+        vm.assume(timeout > 0);
         vm.assume(player1 != address(0));
         vm.assume(player2 != address(0));
         vm.assume(player1 != player2);
-        vm.assume(deposit < 10**24);
-        vm.assume(blockJump < 2000000);
 
         uint256 deploymentBlock = block.number;
 

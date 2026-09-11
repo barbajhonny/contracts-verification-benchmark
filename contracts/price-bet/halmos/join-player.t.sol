@@ -20,8 +20,8 @@ contract PriceBetTest {
         uint256 exchangeRate,
         address player
     ) public {
-        vm.assume(initialPot > 0 && initialPot < 10**24);
-        vm.assume(timeout > 0 && timeout < 1000000);
+        vm.assume(initialPot > 0);
+        vm.assume(timeout > 0);
         vm.assume(player != address(0));
 
         Oracle oracle = new Oracle(100);

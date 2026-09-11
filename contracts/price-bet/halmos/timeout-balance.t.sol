@@ -23,9 +23,6 @@ contract PriceBetTest {
         uint256 blockJump,
         uint256 exchangeRate
     ) public {
-        vm.assume(initialPot > 0 && initialPot < 10**24);
-        vm.assume(timeout > 0 && timeout < 1000000);
-        vm.assume(exchangeRate > 0 && exchangeRate < 10**24);
         vm.assume(owner != address(0));
         vm.assume(player != address(0));
         vm.assume(player != owner);

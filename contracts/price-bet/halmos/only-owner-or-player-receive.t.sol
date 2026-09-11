@@ -23,14 +23,12 @@ contract PriceBetTest {
         uint256 blockJump,
         uint256 oraclePrice
     ) public {
-        vm.assume(initialPot > 0 && initialPot < 10**24);
-        vm.assume(timeout > 0 && timeout < 1000000);
-        vm.assume(exchangeRate > 0 && exchangeRate < 10**24);
+        vm.assume(initialPot > 0);
+        vm.assume(timeout > 0);
+        vm.assume(exchangeRate > 0);
         vm.assume(player != address(0));
         vm.assume(randomAddress != address(0));
         vm.assume(randomAddress != player);
-        vm.assume(blockJump < 2000000);
-        vm.assume(oraclePrice > 0 && oraclePrice < 10**24);
         vm.assume(oraclePrice >= exchangeRate);
 
         address owner = address(this);
