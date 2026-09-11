@@ -24,9 +24,6 @@ contract PriceBetTest {
         uint256 exchangeRate,
         uint256 oraclePrice
     ) public {
-        vm.assume(initialPot > 0 && initialPot < 10**24);
-        vm.assume(timeout > 0 && timeout < 1000000);
-        vm.assume(exchangeRate > 0 && exchangeRate < 10**24);
         vm.assume(player != address(0));
         vm.assume(caller != address(0));
         vm.assume(blockJump < timeout);
