@@ -30,12 +30,8 @@ contract PaymentSplitterTest {
         vm.assume(payee3 != address(0));
         vm.assume(payee1 != payee2 && payee1 != payee3 && payee2 != payee3);
 
-        vm.assume(shares1 > 0 && shares1 <= 10);
-        vm.assume(shares2 > 0 && shares2 <= 10);
-        vm.assume(shares3 > 0 && shares3 <= 10);
-
         uint256 totalExpectedShares = shares1 + shares2 + shares3;
-        vm.assume(totalExpectedShares > 0 && totalExpectedShares <= 30);
+        vm.assume(totalExpectedShares > 0);
 
         vm.assume(initialFunding <= 100000);
         vm.assume(additionalFunding <= 100000);
