@@ -41,8 +41,7 @@ contract MockERC20 {
 contract LendingProtocolTest {
     IHalmosVM constant vm = IHalmosVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
-    /// @notice Helper function defined inside the test contract to compute userA's net worth 
-    /// and prevent "Stack too deep" compiler errors.
+    /// @notice Helper function defined inside the test contract to compute userA's net worth and prevent "Stack too deep" compiler errors.
     function _getNetWorth(
         LendingProtocol protocol,
         MockERC20 t0,
