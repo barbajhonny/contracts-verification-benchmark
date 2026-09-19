@@ -14,6 +14,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from scripts.tools import halmos as halmos_tool
 
 DEFAULT_TIMEOUT = '10m'
+
 def main(args_list=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--halmos-dir', '-hd', help='Halmos working directory.', required=False)
@@ -45,20 +46,39 @@ def main(args_list=None):
     if not gt_path.exists():
         gt_path = Path("./ground-truth.csv")
 
+    # Funzione interna per scoprire tutte le versioni presenti nella cartella
+    def discover_versions(h_dir):
+        vers = set()
+        h_path = Path(h_dir)
+        if h_path.exists():
+            for f in h_path.rglob("*.sol"):
+                parts = f.stem.split('_')
+                if parts and parts[0].startswith('v'):
+                    vers.add(parts[0])
+        return sorted(list(vers), key=lambda x: int(x[1:]) if x[1:].isdigit() else 0)
+
     # Build tasks list based on flags
     if args.property and args.version:
         tasks.append((args.property, args.version))
 
     elif args.property and not args.version:
-        if gt_path.exists():
-            with open(gt_path, 'r') as f:
-                reader = csv.reader(f)
-                next(reader)
-                for row in reader:
-                    if row and len(row) >= 2 and row[0] == args.property:
-                        tasks.append((row[0], row[1]))
-        if not tasks:
-            tasks.append((args.property, 'v1'))
+        # Scansiona la cartella per trovare tutte le versioni esistenti (es. v1, v2... v17)
+        available_versions = discover_versions(halmos_dir)
+        
+        if available_versions:
+            for v in available_versions:
+                tasks.append((args.property, v))
+        else:
+            # Fallback sul ground-truth se la cartella è vuota o non trovata
+            if gt_path.exists():
+                with open(gt_path, 'r') as f:
+                    reader = csv.reader(f)
+                    next(reader)
+                    for row in reader:
+                        if row and len(row) >= 2 and row[0] == args.property:
+                            tasks.append((row[0], row[1]))
+            if not tasks:
+                tasks.append((args.property, 'v1'))
 
     else:
         if gt_path.exists():

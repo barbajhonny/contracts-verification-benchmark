@@ -1,5 +1,6 @@
 import argparse
-import run_halmos
+import sys
+import os
 
 def main():
     parser = argparse.ArgumentParser(description='Halmos benchmark orchestrator')
@@ -14,11 +15,19 @@ def main():
 
     args = parser.parse_args()
 
+    contract_dir = f"../contracts/{args.contract}/halmos"
+    contracts_build_dir = f"{contract_dir}/build/contracts"
+
+    import run_halmos
+
     args_halmos = [
-        "--contracts", args.contract,
-        "--output", "./build/halmos"
+        "--contracts", contracts_build_dir,
+        "--output", f"{contract_dir}/build/halmos",
+        "--halmos-dir", contracts_build_dir
     ]
 
+    # SE specifici la versione, la passiamo. ALTRIMENTI non passiamo nulla 
+    # e run_halmos capirà che deve eseguirli tutti!
     if args.version:
         args_halmos += ["--version", args.version]
 
