@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: UNLICENSE
 pragma solidity >=0.8.2;
 
 import "target/{{VERSION}}.sol";
@@ -10,9 +10,8 @@ interface IHalmosVM {
 }
 
 contract PaymentSplitterTest {
-
     IHalmosVM constant vm = IHalmosVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
-
+    
     /// @notice Property: releasable-leq-balance
     function check_releasable_leq_balance(
         address payee1,
@@ -22,20 +21,18 @@ contract PaymentSplitterTest {
         address payee3,
         uint256 shares3,
         uint256 initialFunding,
-        uint256 additionalFunding
+        uint256 additionalFunding,
+        uint256 targetIndex
     ) public {
-        // Tighter Assumptions to prevent SMT solver explosion and WSL crash 
+
+        // Tighter Assumptions to prevent SMT solver explosion and WSL crash
         vm.assume(payee1 != address(0));
         vm.assume(payee2 != address(0));
         vm.assume(payee3 != address(0));
         vm.assume(payee1 != payee2 && payee1 != payee3 && payee2 != payee3);
 
-        vm.assume(shares1 > 0 && shares1 <= 10);
-        vm.assume(shares2 > 0 && shares2 <= 10);
-        vm.assume(shares3 > 0 && shares3 <= 10);
-
         uint256 totalExpectedShares = shares1 + shares2 + shares3;
-        vm.assume(totalExpectedShares > 0 && totalExpectedShares <= 30);
+        vm.assume(totalExpectedShares > 0);
 
         vm.assume(initialFunding <= 100000);
         vm.assume(additionalFunding <= 100000);
@@ -48,14 +45,21 @@ contract PaymentSplitterTest {
             vm.assume(success);
         }
 
-        uint256 length = splitter.getPayeesLength();
-        uint256 contractBalance = address(splitter).balance;
+        vm.assume(targetIndex < 3);
 
-        for (uint256 i = 0; i < length; i++) {
-            address a = splitter.getPayee(i);
-            uint256 releasableAmount = splitter.releasable(a);
-            
-            assert(releasableAmount <= contractBalance);
+        address a;
+        if (targetIndex == 0) {
+            a = payee1;
+        } else if (targetIndex == 1) {
+            a = payee2;
+        } else {
+            a = payee3;
         }
+
+        uint256 contractBalance = address(splitter).balance;
+        uint256 releasableAmount = splitter.releasable(payable(a));
+        assert(releasableAmount <= contractBalance);
+
     }
+
 }
