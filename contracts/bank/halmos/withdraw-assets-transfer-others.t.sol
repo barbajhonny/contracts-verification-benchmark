@@ -13,10 +13,6 @@ contract BankTest {
     IHalmosVM constant vm = IHalmosVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     Bank bank;
 
-    function setUp() public {
-        {{CONSTRUCTOR_SETUP}};
-    }
-
     /// @notice Property: withdraw-assets-transfer-others
     function check_withdraw_assets_transfer_others(
         address caller,
@@ -24,8 +20,11 @@ contract BankTest {
         uint256 depositAmount,
         uint256 withdrawAmount,
         uint256 otherDepositAmount,
-        uint256 amount
+        uint256 amount,
+        uint256 limitAmount
     ) public {
+        {{CONSTRUCTOR_SETUP}};
+
         vm.assume(caller != address(0) && caller != address(bank));
         vm.assume(otherUser != address(0) && otherUser != address(bank));
         vm.assume(caller != otherUser);
@@ -35,6 +34,7 @@ contract BankTest {
         vm.assume(depositAmount > 0);
         vm.assume(otherDepositAmount > 0);
         vm.assume(withdrawAmount <= depositAmount); 
+        vm.assume(limitAmount > 0);
 
         vm.deal(caller, amount);
         vm.deal(otherUser, amount);

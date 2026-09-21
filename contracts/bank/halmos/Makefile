@@ -80,7 +80,7 @@ setup: contracts directories
 				sed -e "s/{{VERSION}}/$$ver_short/g" \
 				    -e "s/{{CONTRACT_NAME}}/BankTest_$${ver_short}_$${prop_name_safe}/g" \
 				    -e "s/contract BankTest/contract BankTest_$${ver_short}_$${prop_name_safe}/g" \
-				    -e "s/{{CONSTRUCTOR_SETUP}}/bank = new Bank(99 ether)/g" $$prop_file > $$target_file; \
+				    -e "s/{{CONSTRUCTOR_SETUP}}/bank = new Bank(limitAmount)/g" $$prop_file > $$target_file; \
 			else \
 				sed -e "s/{{VERSION}}/$$ver_short/g" \
 				    -e "s/{{CONTRACT_NAME}}/BankTest_$${ver_short}_$${prop_name_safe}/g" \

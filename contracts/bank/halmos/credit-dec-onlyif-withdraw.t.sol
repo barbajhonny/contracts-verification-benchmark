@@ -14,13 +14,9 @@ contract BankTest {
     IHalmosVM constant vm = IHalmosVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     Bank bank;
 
-    function setUp() public {
-        {{CONSTRUCTOR_SETUP}};
-    }
-
     // Helper function to read credits directly from EVM storage 
     function getCredits(address user) internal view returns (uint256) {
-        bytes32 slot = keccak256(abi.encodePacked(user, uint256(0)));
+        bytes32 slot = keccak256(abi.encodePacked(uint256(uint160(user)), uint256(0)));
         bytes32 value = vm.load(address(bank), slot);
         return uint256(value);
     }
@@ -32,13 +28,17 @@ contract BankTest {
         address caller,  
         address targetUser,
         uint256 initialBalance,
-        uint256 initialDeposit
+        uint256 initialDeposit,
+        uint256 limitAmount
     ) public {
+        {{CONSTRUCTOR_SETUP}};
+
         vm.assume(caller != address(0));
         vm.assume(targetUser != address(0));
         vm.assume(initialBalance >= initialDeposit);
         vm.assume(initialDeposit > 0);
         vm.assume(amount > 0);
+        vm.assume(limitAmount > 0);
     
         // Give initial funds
         vm.deal(caller, initialBalance);

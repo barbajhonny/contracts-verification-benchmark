@@ -40,18 +40,20 @@ contract BankTest {
     IHalmosVM constant vm = IHalmosVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     Bank bank;
 
-    function setUp() public {
-        {{CONSTRUCTOR_SETUP}};
-    }
+    function setUp() public {}
 
     /// @notice Property: assets-dec-onlyif-deposit
     function check_assets_dec_onlyif_deposit(
         bool isDeposit,
         uint256 amount,
         address burnTarget,
-        uint256 extraBalance
+        uint256 extraBalance,
+        uint256 limitAmount
     ) public {
+        {{CONSTRUCTOR_SETUP}};
+
         vm.assume(burnTarget != address(0));
+        vm.assume(limitAmount > 0);
 
         ContractUser userA = new ContractUser(bank, burnTarget);
         vm.deal(address(userA), amount + extraBalance);

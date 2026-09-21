@@ -13,23 +13,23 @@ contract BankTest {
     IHalmosVM constant vm = IHalmosVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     Bank bank;
 
-    function setUp() public {
-        {{CONSTRUCTOR_SETUP}};
-    }
-
     /// @notice Property: deposit-assets-transfer-others
     function check_deposit_assets_transfer_others(
         address caller,
         address targetUser,
         uint256 depositAmount,
-        uint256 initialBalance
+        uint256 initialBalance,
+        uint256 limitAmount
     ) public {
+        {{CONSTRUCTOR_SETUP}};
+
         vm.assume(caller != address(0));
         vm.assume(targetUser != address(0));
         vm.assume(caller != targetUser);
         vm.assume(targetUser != address(bank));
         vm.assume(depositAmount > 0);
         vm.assume(initialBalance >= depositAmount);
+        vm.assume(limitAmount > 0);
 
         vm.deal(caller, initialBalance);
         vm.deal(targetUser, initialBalance);
