@@ -26,8 +26,6 @@ def main():
         "--halmos-dir", contracts_build_dir
     ]
 
-    # SE specifici la versione, la passiamo. ALTRIMENTI non passiamo nulla 
-    # e run_halmos capirà che deve eseguirli tutti!
     if args.version:
         args_halmos += ["--version", args.version]
 
