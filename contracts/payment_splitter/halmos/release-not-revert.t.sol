@@ -14,7 +14,6 @@ contract PaymentSplitterTest {
     IHalmosVM constant vm = IHalmosVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
     /// @notice Property: release-not-revert
-    /// For all addresses `a` in `payees`, if `releasable(a) > 0`, then `release(a)` does not revert.
     function check_release_not_revert(
         address payee1,
         uint256 shares1,
@@ -32,7 +31,7 @@ contract PaymentSplitterTest {
         vm.assume(payee1 != payee2 && payee1 != payee3 && payee2 != payee3);
 
         uint256 totalExpectedShares = shares1 + shares2 + shares3;
-        vm.assume(totalExpectedShares > 0 && totalExpectedShares <= 30);
+        vm.assume(totalExpectedShares > 0);
 
         vm.assume(initialFunding <= 10000);
         vm.assume(additionalFunding <= 10000);
