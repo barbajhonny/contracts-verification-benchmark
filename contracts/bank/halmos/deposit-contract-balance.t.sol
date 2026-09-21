@@ -25,10 +25,9 @@ contract BankTest {
     ) public {
         vm.assume(caller != address(0));
         vm.assume(caller != address(bank));
-
-        vm.assume(depositAmount > 0 && depositAmount <= 100 ether);
+        
+        vm.assume(depositAmount > 0);
         vm.assume(initialBalance >= depositAmount);
-        vm.assume(initialBalance <= 1000 ether);
 
         vm.deal(caller, initialBalance);
 

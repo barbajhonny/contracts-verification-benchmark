@@ -20,14 +20,15 @@ contract BankTest {
     /// @notice Property: deposit-not-revert-external
     function check_deposit_not_revert_external(
         address caller,
-        uint256 depositAmount
+        uint256 depositAmount,
+        uint256 initialBalance
     ) public {
         vm.assume(caller != address(0));
         vm.assume(caller != address(bank));
         vm.assume(caller != address(vm));
 
-        vm.assume(depositAmount <= 1000 ether);
-        vm.deal(caller, 2000 ether);
+        vm.assume(initialBalance >= depositAmount);
+        vm.deal(caller, initialBalance);
 
         vm.prank(caller);
         (bool success,) = address(bank).call{value: depositAmount}(

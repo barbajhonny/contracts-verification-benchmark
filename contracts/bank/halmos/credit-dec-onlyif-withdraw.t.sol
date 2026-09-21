@@ -31,27 +31,31 @@ contract BankTest {
         uint256 amount,
         address caller,  
         address targetUser,
-        uint256 initialBalance
+        uint256 initialBalance,
+        uint256 initialDeposit
     ) public {
         vm.assume(caller != address(0));
         vm.assume(targetUser != address(0));
-        vm.assume(amount > 0 && amount <= 50 ether);
-        vm.assume(initialBalance <= 100 ether);
-
+        vm.assume(initialBalance >= initialDeposit);
+        vm.assume(initialDeposit > 0);
+        vm.assume(amount > 0);
+    
+        // Give initial funds
         vm.deal(caller, initialBalance);
         vm.deal(targetUser, initialBalance);
-
-        // Give initial credits to targetUser by making a deposit
+        
+        // Give initial credits to targetUser
         vm.prank(targetUser);
-        try bank.deposit{value: 10 ether}() {} catch {}
+        bank.deposit{value: initialDeposit}();
 
         uint256 currb = getCredits(targetUser);
 
         vm.prank(caller);
         if (isWithdraw) {
-            try bank.withdraw(amount) {} catch {}
+            vm.assume(initialDeposit >= amount); 
+            bank.withdraw(amount);
         } else {
-            try bank.deposit{value: amount}() {} catch {}
+            bank.deposit{value: amount}();
         }
 
         uint256 newb = getCredits(targetUser);
@@ -60,6 +64,5 @@ contract BankTest {
             assert(isWithdraw);
             assert(caller == targetUser);
         }
-        
     }
 }

@@ -21,14 +21,17 @@ contract BankTest {
     function check_withdraw_sender_rcv_EOA(
         address caller,
         uint256 depositAmount,
-        uint256 withdrawAmount
+        uint256 withdrawAmount,
+        uint256 amount
     ) public {
         vm.assume(caller != address(0) && caller != address(bank));
         vm.assume(caller.code.length == 0); 
 
-        vm.assume(depositAmount <= 1000 ether);
-        vm.assume(withdrawAmount <= 1000 ether);
-        vm.deal(caller, 2000 ether);
+        vm.assume(amount > 0);
+        vm.assume(depositAmount > 0);
+        vm.assume(amount >= depositAmount);
+        
+        vm.deal(caller, amount);
 
         // Deposit
         vm.prank(caller);

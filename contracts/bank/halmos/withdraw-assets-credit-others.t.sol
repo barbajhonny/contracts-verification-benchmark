@@ -31,18 +31,21 @@ contract BankTest {
         address otherUser,
         uint256 depositAmount,
         uint256 withdrawAmount,
-        uint256 otherDepositAmount
+        uint256 otherDepositAmount,
+        uint256 amount
     ) public {
         vm.assume(caller != address(0) && caller != address(bank));
         vm.assume(otherUser != address(0) && otherUser != address(bank));
         vm.assume(caller != otherUser);
 
-        vm.assume(depositAmount > 0 && depositAmount <= 100 ether);
-        vm.assume(otherDepositAmount > 0 && otherDepositAmount <= 100 ether);
-        vm.assume(withdrawAmount > 0 && withdrawAmount <= depositAmount);
+        vm.assume(amount >= depositAmount );
+        vm.assume(amount >= otherDepositAmount);
+        vm.assume(depositAmount > 0);
+        vm.assume(otherDepositAmount > 0);
+        vm.assume(withdrawAmount <= depositAmount); 
 
-        vm.deal(caller, 200 ether);
-        vm.deal(otherUser, 200 ether);
+        vm.deal(caller, amount);
+        vm.deal(otherUser, amount);
 
         vm.prank(otherUser);
         bank.deposit{value: otherDepositAmount}();

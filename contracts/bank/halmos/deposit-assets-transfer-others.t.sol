@@ -27,12 +27,9 @@ contract BankTest {
         vm.assume(caller != address(0));
         vm.assume(targetUser != address(0));
         vm.assume(caller != targetUser);
-        
         vm.assume(targetUser != address(bank));
-
-        vm.assume(depositAmount > 0 && depositAmount <= 100 ether);
+        vm.assume(depositAmount > 0);
         vm.assume(initialBalance >= depositAmount);
-        vm.assume(initialBalance <= 1000 ether);
 
         vm.deal(caller, initialBalance);
         vm.deal(targetUser, initialBalance);
@@ -40,10 +37,10 @@ contract BankTest {
         uint256 targetEthBefore = targetUser.balance;
 
         vm.prank(caller);
+        bank.deposit{value: depositAmount}();
         
-        try bank.deposit{value: depositAmount}() {
-            uint256 targetEthAfter = targetUser.balance;
-            assert(targetEthAfter == targetEthBefore);
-        } catch {}
+        uint256 targetEthAfter = targetUser.balance;
+        assert(targetEthAfter == targetEthBefore);
+
     }
 }

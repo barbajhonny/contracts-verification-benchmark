@@ -28,9 +28,9 @@ contract BankTest {
 
         vm.assume(caller != address(0));
         vm.assume(targetUser != address(0));
-        vm.assume(amount > 0 && amount <= 100 ether);
-        vm.assume(initialBalance <= 200 ether);
-
+        vm.assume (amount > 0);
+        vm.assume(initialBalance >= amount);
+       
         // Give initial funds into the wallet
         vm.deal(caller, initialBalance);
         vm.deal(targetUser, initialBalance);

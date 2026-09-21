@@ -28,15 +28,18 @@ contract BankTest {
      function check_withdraw_revert(
         address caller,
         uint256 depositAmount,
-        uint256 withdrawAmount
+        uint256 withdrawAmount,
+        uint256 amount
     ) public {
         vm.assume(caller != address(0));
         vm.assume(caller != address(bank));
         vm.assume(caller != address(vm));
 
-        vm.assume(depositAmount <= 1000 ether);
-        vm.assume(withdrawAmount <= 1000 ether);
-        vm.deal(caller, 2000 ether);
+        vm.assume(amount > 0);
+        vm.assume(amount >= depositAmount);
+        vm.assume(depositAmount > 0);
+        
+        vm.deal(caller, amount);
 
         vm.prank(caller);
         (bool depositSuccess,) = address(bank).call{value: depositAmount}(

@@ -52,8 +52,6 @@ contract BankTest {
         uint256 extraBalance
     ) public {
         vm.assume(burnTarget != address(0));
-        vm.assume(amount > 0 && amount <= 100 ether);
-        vm.assume(extraBalance <= 100 ether);
 
         ContractUser userA = new ContractUser(bank, burnTarget);
         vm.deal(address(userA), amount + extraBalance);

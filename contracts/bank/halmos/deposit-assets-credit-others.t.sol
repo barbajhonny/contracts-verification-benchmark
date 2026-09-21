@@ -33,12 +33,11 @@ contract BankTest {
         uint256 initialBalance
     ) public {
         vm.assume(caller != address(0));
-        
         vm.assume(targetUser != address(0));
         vm.assume(targetUser != address(bank));
-
         vm.assume(caller != targetUser);
 
+        vm.assume(depositAmount > 0);
         vm.assume(initialBalance >= depositAmount);
         
         // Give eth to caller 
@@ -51,7 +50,6 @@ contract BankTest {
         try bank.deposit{value: depositAmount}() {
             uint256 targetCreditsAfter = getCredits(targetUser);
             assert(targetCreditsAfter == targetCreditsBefore);
-        } catch {
-        }
+        } catch {}
     }
 }
