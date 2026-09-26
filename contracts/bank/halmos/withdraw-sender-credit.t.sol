@@ -14,10 +14,6 @@ contract BankTest {
     IHalmosVM constant vm = IHalmosVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     Bank bank;
 
-    function setUp() public {
-        {{CONSTRUCTOR_SETUP}};
-    }
-
    function getCredits(address user) internal view returns (uint256) {
         bytes32 slot = keccak256(abi.encodePacked(uint256(uint160(user)), uint256(0)));
         bytes32 value = vm.load(address(bank), slot);
@@ -28,14 +24,22 @@ contract BankTest {
     function check_withdraw_sender_credit(
         address caller,
         uint256 depositAmount,
-        uint256 withdrawAmount
+        uint256 withdrawAmount,
+        uint256 amount,
+        uint256 limitAmount
     ) public {
+        {{CONSTRUCTOR_SETUP}};
+
         vm.assume(caller != address(0) && caller != address(bank));
-        vm.assume(depositAmount > 0 && depositAmount <= 1000 ether);
-        vm.assume(withdrawAmount > 0 && withdrawAmount <= 1000 ether);
-        vm.assume(withdrawAmount <= depositAmount);
         
-        vm.deal(caller, 2000 ether);
+        vm.assume(amount > 0);
+        vm.assume(depositAmount > 0);
+        vm.assume(amount >= depositAmount);
+        vm.assume(withdrawAmount > 0);
+        vm.assume(withdrawAmount <= depositAmount);
+        vm.assume(limitAmount > 0);
+        
+        vm.deal(caller, amount);
         
         vm.prank(caller);
         bank.deposit{value: depositAmount}();

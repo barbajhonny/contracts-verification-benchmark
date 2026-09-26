@@ -14,21 +14,20 @@ contract BankTest {
     IHalmosVM constant vm = IHalmosVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     Bank bank;
 
-    function setUp() public {
-        {{CONSTRUCTOR_SETUP}};
-    }
-
     // Helper function to read credits directly from EVM storage
     function getCredits(address user) internal view returns (uint256) {
-        bytes32 slot = keccak256(abi.encodePacked(user, uint256(0)));
+        bytes32 slot = keccak256(abi.encodePacked(uint256(uint160(user)), uint256(0)));
         bytes32 value = vm.load(address(bank), slot);
         return uint256(value);
     }
 
     /// @notice Property: deposit-revert
-    function check_deposit_revert(address caller, uint256 depositAmount) public {
+    function check_deposit_revert(address caller, uint256 depositAmount, uint256 limitAmount) public {
+        {{CONSTRUCTOR_SETUP}};
+
         vm.assume(caller != address(0) && caller != address(bank));
         vm.assume(depositAmount > 1000); 
+        vm.assume(limitAmount > 0);
 
         vm.deal(caller, type(uint128).max); 
         

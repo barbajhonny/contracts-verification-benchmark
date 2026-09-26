@@ -14,13 +14,9 @@ contract BankTest {
     IHalmosVM constant vm = IHalmosVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     Bank bank;
 
-    function setUp() public {
-        {{CONSTRUCTOR_SETUP}};
-    }
-
     // Helper function to read credits directly from EVM storage
     function getCredits(address user) internal view returns (uint256) {
-        bytes32 slot = keccak256(abi.encodePacked(user, uint256(0)));
+        bytes32 slot = keccak256(abi.encodePacked(uint256(uint160(user)), uint256(0)));
         bytes32 value = vm.load(address(bank), slot);
         return uint256(value);
     }
@@ -31,12 +27,16 @@ contract BankTest {
         uint256 amount,
         address caller,
         address targetUser,
-        uint256 initialBalance
+        uint256 initialBalance,
+        uint256 limitAmount
     ) public {
+        {{CONSTRUCTOR_SETUP}};
+
         vm.assume(caller != address(0));
         vm.assume(targetUser != address(0));
-        vm.assume(amount > 0 && amount <= 50 ether);
-        vm.assume(initialBalance <= 100 ether);
+        vm.assume(amount > 0);
+        vm.assume(initialBalance >= amount);
+        vm.assume(limitAmount > 0);
 
         // Give ETH into the wallet
         vm.deal(caller, initialBalance);
@@ -47,9 +47,10 @@ contract BankTest {
 
         vm.prank(caller);
         if (isDeposit) {
-            try bank.deposit{value: amount}() {} catch {}   
+            bank.deposit{value: amount}();   
         } else {
-            try bank.withdraw(amount) {} catch {}  
+            vm.assume(getCredits(caller) >= amount);
+            bank.withdraw(amount);  
         }
 
         // Record targetUser's credits after the transaction
