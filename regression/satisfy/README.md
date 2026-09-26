@@ -42,3 +42,10 @@ The contract `Satisfy` has one function `f` and two uint `r0` and `r1`:
 | **v1** | TP                |
  
 
+
+### Halmos
+|        | f-call-not-revert |
+|--------|-------------------|
+| **v1** | FN!               |
+ 
+

@@ -57,3 +57,10 @@ The correct property is `f-modifiers-x-right` because before the function `f` is
 | **v1** | TP!                 | TN                  |
  
 
+
+### Halmos
+|        | g-modifiers-x-right | g-modifiers-x-wrong |
+|--------|---------------------|---------------------|
+| **v1** | TP!                 | TN!                 |
+ 
+

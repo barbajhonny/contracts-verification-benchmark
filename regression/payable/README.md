@@ -48,3 +48,10 @@ The contract `Payable` has two functions `g` and `balanceOf`:
 | **v1** | TN              |
  
 
+
+### Halmos
+|        | g-check-balance |
+|--------|-----------------|
+| **v1** | TN!             |
+ 
+

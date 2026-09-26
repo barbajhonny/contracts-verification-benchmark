@@ -52,3 +52,10 @@ The contract `ThisPayable` has three functions `g`, `h` and `balanceOf`:
 | **v1** | TP!             |
  
 
+
+### Halmos
+|        | g-check-balance |
+|--------|-----------------|
+| **v1** | TP!             |
+ 
+

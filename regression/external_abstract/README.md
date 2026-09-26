@@ -67,3 +67,10 @@ We cannot trust `d.d` call because `d` could be implemented to call the function
 | **v1** | TN              |
  
 
+
+### Halmos
+|        | x-abstract-call |
+|--------|-----------------|
+| **v1** | TN!             |
+ 
+

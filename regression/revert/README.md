@@ -47,3 +47,10 @@ function f(bool b, uint a) public {
 | **v1** | TN         |
  
 
+
+### Halmos
+|        | c-equals-a |
+|--------|------------|
+| **v1** | TN!        |
+ 
+

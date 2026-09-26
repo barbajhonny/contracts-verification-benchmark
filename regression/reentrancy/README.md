@@ -50,3 +50,10 @@ This contract is vulnerable to reentrancy attack: an attacker can deploy a malic
 | **v1** | FP!            |
  
 
+
+### Halmos
+|        | f-reentrancy-x |
+|--------|----------------|
+| **v1** | TN!            |
+ 
+
