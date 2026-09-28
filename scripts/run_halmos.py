@@ -107,8 +107,16 @@ def main(args_list=None):
         writer.writerows(out_csv)
 
 
-    history_path = (output_dir / ".." / ".." / ".." / "halmos.csv").resolve()   
+        # ------------------------------------------------------------------
+    # 2. halmos.csv = storico cumulativo (merge + ordinamento alfabetico)
+    # ------------------------------------------------------------------
+    history_path = (output_dir / ".." / ".." / ".." / "halmos.csv").resolve()
+
+    # (prop, ver) -> res per la run corrente, INCLUSI gli ERR
+    all_current = dict(current_results)
+    seen = set()
     existing_rows = []
+
     if history_path.exists():
         try:
             with open(history_path, 'r', newline='') as f:
@@ -116,19 +124,33 @@ def main(args_list=None):
                 next(reader, None)  # salta header
                 for row in reader:
                     if row and len(row) >= 2:
-                        if (row[0], row[1]) not in current_results:
+                        key = (row[0], row[1])
+                        if key in all_current:
+                            res = all_current[key]
+                            if str(res).upper() not in ["ERR"]:
+                                # aggiorna il risultato mantenendo property/version
+                                existing_rows.append([row[0], row[1], res])
+                            # se ERR: scarta (non riaggiunge)
+                            seen.add(key)
+                        else:
+                            # riga non toccata: preserva
                             existing_rows.append(row)
         except Exception as e:
             print(f"Warning: could not read history {history_path}: {e}", file=sys.stderr)
 
-    history_csv = [utils.OUT_HEADER] + existing_rows
-    for (p, v), res in current_results.items():
-        if str(res).upper() not in ["ERR"]:
-            history_csv.append([p, v, res])
+    # righe nuove (non presenti nello storico)
+    for (p, v), res in all_current.items():
+        if (p, v) not in seen and str(res).upper() not in ["ERR"]:
+            existing_rows.append([p, v, res])
 
+    # ordina alfabeticamente per (property, version)
+    existing_rows.sort(key=lambda r: (r[0], r[1]))
+
+    # scrivi
     with open(history_path, 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerows(history_csv)
+        writer.writerow(utils.OUT_HEADER)
+        writer.writerows(existing_rows)
 
     for (p, v), res in current_results.items():
         print(f"Halmos result appended for {p} ({v}): {res}")
