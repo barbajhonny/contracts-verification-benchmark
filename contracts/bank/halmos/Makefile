@@ -30,12 +30,12 @@ OUT = $(OUTPUT_DIR)/out.csv
 CM = $(OUTPUT_DIR)/cm.csv
 TABLE = $(OUTPUT_DIR)/table.md
 
-# Path to bank/
+# Persistent history (committed to git, survives 'make clean')
 ROOT_BANK_HALMOS_CSV = ../halmos.csv
 
 PYTHON = python
 
-.PHONY: run setup contracts directories clean
+.PHONY: run setup contracts directories clean 
 
 #---------------------------- RUN --------------------------------#
 run: $(TABLE)
@@ -48,8 +48,7 @@ $(TABLE): $(CM)
 $(CM): $(GROUND_TRUTH) $(OUT)
 	@echo "Generating Halmos confusion matrix ($(CM))..."
 	@$(PYTHON) ../../../scripts/cm_gen.py --ground-truth $(GROUND_TRUTH) --results $(OUT) > $(CM)
-	@cp -f $(OUT) $(ROOT_BANK_HALMOS_CSV)
-
+	
 $(OUT): setup
 	@echo "Running Halmos experiments..."
 	@$(PYTHON) ../../../scripts/run_halmos.py \
@@ -62,8 +61,8 @@ $(OUT): setup
 
 #---------------------------- SETUP ------------------------------#
 setup: contracts directories
-	
- contracts: $(CONTRACTS_DIR) $(LIB_DIR)
+
+contracts: $(CONTRACTS_DIR) $(LIB_DIR)
 	@echo "Generating version-specific test files for Halmos..."
 	@cp ./foundry.toml $(CONTRACTS_DIR)/
 	@mkdir -p $(CONTRACTS_DIR)/versions
@@ -104,5 +103,6 @@ $(LIB_DIR):
 	@rm -f $@/ERC20v3.sol
 
 #---------------------------- CLEAN ------------------------------#
+
 clean:
 	rm -rf $(BUILD_DIR)
