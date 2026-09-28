@@ -6,7 +6,6 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 
-#DA FINIRE ANCORA, AGGIUSTARE LA TABELLA CSV, NON LA AGGIORNA , LA SOVVRASCRIVE, DA FIXARE!!
 
 def main():
     parser = argparse.ArgumentParser(description='Halmos benchmark orchestrator')
@@ -21,8 +20,6 @@ def main():
     if not contract_dir.exists():
         print(f"Error: {contract_dir} does not exist", file=sys.stderr)
         sys.exit(1)
-
-    #makefile = contract_dir / "Makefile"
 
     make_cmd = ["make", "run"]
     if args.version:

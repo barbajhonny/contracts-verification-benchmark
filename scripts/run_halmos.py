@@ -47,7 +47,6 @@ def main(args_list=None):
     if not gt_path.exists():
         gt_path = Path("./ground-truth.csv")
 
-    # Funzione interna per scoprire tutte le versioni presenti nella cartella
     def discover_versions(h_dir):
         vers = set()
         h_path = Path(h_dir)
@@ -97,9 +96,6 @@ def main(args_list=None):
         res = halmos_tool.run_halmos_for_task(p, v, halmos_dir, output_dir, timeout_seconds)
         current_results[(p, v)] = res
 
-    # ------------------------------------------------------------------
-    # 1. out.csv = SOLO la run corrente (senza ERR)
-    # ------------------------------------------------------------------
     out_csv_path = output_dir.joinpath('out.csv')
     out_csv = [utils.OUT_HEADER]
     for (p, v), res in current_results.items():
@@ -110,12 +106,7 @@ def main(args_list=None):
         writer = csv.writer(f)
         writer.writerows(out_csv)
 
-    # ------------------------------------------------------------------
-    # 2. halmos.csv = storico cumulativo (merge)
-    #    - righe vecchie la cui (prop, ver) NON è nella run corrente: preservate
-    #    - righe vecchie la cui (prop, ver) È nella run corrente: scartate
-    #    - righe nuove: aggiunte solo se res != ERR
-    # ------------------------------------------------------------------
+
     history_path = (output_dir / ".." / ".." / ".." / "halmos.csv").resolve()   
     existing_rows = []
     if history_path.exists():
@@ -139,9 +130,6 @@ def main(args_list=None):
         writer = csv.writer(f)
         writer.writerows(history_csv)
 
-    # ------------------------------------------------------------------
-    # Log
-    # ------------------------------------------------------------------
     for (p, v), res in current_results.items():
         print(f"Halmos result appended for {p} ({v}): {res}")
 
