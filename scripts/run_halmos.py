@@ -15,6 +15,7 @@ from scripts.tools import halmos as halmos_tool
 
 DEFAULT_TIMEOUT = '10m'
 
+
 def main(args_list=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--halmos-dir', '-hd', help='Halmos working directory.', required=False)
@@ -62,14 +63,11 @@ def main(args_list=None):
         tasks.append((args.property, args.version))
 
     elif args.property and not args.version:
-        # Scansiona la cartella per trovare tutte le versioni esistenti (es. v1, v2... v17)
         available_versions = discover_versions(halmos_dir)
-        
         if available_versions:
             for v in available_versions:
                 tasks.append((args.property, v))
         else:
-            # Fallback sul ground-truth se la cartella è vuota o non trovata
             if gt_path.exists():
                 with open(gt_path, 'r') as f:
                     reader = csv.reader(f)
@@ -99,22 +97,11 @@ def main(args_list=None):
         res = halmos_tool.run_halmos_for_task(p, v, halmos_dir, output_dir, timeout_seconds)
         current_results[(p, v)] = res
 
-    # Incremental update of out.csv
+    # ------------------------------------------------------------------
+    # 1. out.csv = SOLO la run corrente (senza ERR)
+    # ------------------------------------------------------------------
     out_csv_path = output_dir.joinpath('out.csv')
-    existing_rows = []
-    if out_csv_path.exists():
-        try:
-            with open(out_csv_path, 'r') as f:
-                reader = csv.reader(f)
-                next(reader)
-                for row in reader:
-                    if row:
-                        if (row[0], row[1]) not in current_results:
-                            existing_rows.append(row)
-        except Exception:
-            pass
-
-    out_csv = [utils.OUT_HEADER] + existing_rows
+    out_csv = [utils.OUT_HEADER]
     for (p, v), res in current_results.items():
         if str(res).upper() not in ["ERR"]:
             out_csv.append([p, v, res])
@@ -123,6 +110,38 @@ def main(args_list=None):
         writer = csv.writer(f)
         writer.writerows(out_csv)
 
+    # ------------------------------------------------------------------
+    # 2. halmos.csv = storico cumulativo (merge)
+    #    - righe vecchie la cui (prop, ver) NON è nella run corrente: preservate
+    #    - righe vecchie la cui (prop, ver) È nella run corrente: scartate
+    #    - righe nuove: aggiunte solo se res != ERR
+    # ------------------------------------------------------------------
+    history_path = (output_dir / ".." / ".." / ".." / "halmos.csv").resolve()   
+    existing_rows = []
+    if history_path.exists():
+        try:
+            with open(history_path, 'r', newline='') as f:
+                reader = csv.reader(f)
+                next(reader, None)  # salta header
+                for row in reader:
+                    if row and len(row) >= 2:
+                        if (row[0], row[1]) not in current_results:
+                            existing_rows.append(row)
+        except Exception as e:
+            print(f"Warning: could not read history {history_path}: {e}", file=sys.stderr)
+
+    history_csv = [utils.OUT_HEADER] + existing_rows
+    for (p, v), res in current_results.items():
+        if str(res).upper() not in ["ERR"]:
+            history_csv.append([p, v, res])
+
+    with open(history_path, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerows(history_csv)
+
+    # ------------------------------------------------------------------
+    # Log
+    # ------------------------------------------------------------------
     for (p, v), res in current_results.items():
         print(f"Halmos result appended for {p} ({v}): {res}")
 

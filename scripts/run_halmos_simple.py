@@ -18,18 +18,11 @@ def main():
 
     contract_dir = PROJECT_ROOT / "contracts" / args.contract / "halmos"
 
-    print(f"[DEBUG] SCRIPT_DIR   = {SCRIPT_DIR}")
-    print(f"[DEBUG] PROJECT_ROOT = {PROJECT_ROOT}")
-    print(f"[DEBUG] contract_dir = {contract_dir}")
-    print(f"[DEBUG] exists?      = {contract_dir.exists()}")
-
     if not contract_dir.exists():
         print(f"Error: {contract_dir} does not exist", file=sys.stderr)
         sys.exit(1)
 
-    # verifica che il Makefile esista
-    makefile = contract_dir / "Makefile"
-    print(f"[DEBUG] Makefile     = {makefile} (exists={makefile.exists()})")
+    #makefile = contract_dir / "Makefile"
 
     make_cmd = ["make", "run"]
     if args.version:
@@ -39,8 +32,6 @@ def main():
     if args.timeout:
         make_cmd.append(f"to={args.timeout}")
 
-    print(f"[DEBUG] cmd          = {' '.join(make_cmd)}")
-    print(f"[DEBUG] cwd          = {contract_dir}")
 
     try:
         subprocess.run(make_cmd, cwd=contract_dir, check=True)
