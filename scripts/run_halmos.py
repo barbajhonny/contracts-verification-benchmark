@@ -41,61 +41,54 @@ def main(args_list=None):
     timeout = args.timeout if args.timeout else DEFAULT_TIMEOUT
     timeout_seconds = halmos_tool.parse_timeout_to_seconds(timeout)
 
-    tasks = []
-
+    # Locate ground-truth file (parent dir first, fallback to cwd)
     gt_path = Path("../ground-truth.csv")
     if not gt_path.exists():
         gt_path = Path("./ground-truth.csv")
 
-    def discover_versions(h_dir):
-        vers = set()
-        h_path = Path(h_dir)
-        if h_path.exists():
-            for f in h_path.rglob("*.sol"):
-                parts = f.stem.split('_')
-                if parts and parts[0].startswith('v'):
-                    vers.add(parts[0])
-        return sorted(list(vers), key=lambda x: int(x[1:]) if x[1:].isdigit() else 0)
+    # Read ground-truth: set of valid (property, version) pairs
+    gt_keys = set()
+    if gt_path.exists():
+        with open(gt_path, 'r', newline='') as f:
+            reader = csv.reader(f)
+            next(reader, None)  # skip header
+            for row in reader:
+                if row and len(row) >= 2:
+                    gt_keys.add((row[0], row[1]))
 
-    # Build tasks list based on flags
+    tasks = []
+
     if args.property and args.version:
-        tasks.append((args.property, args.version))
-
-    elif args.property and not args.version:
-        available_versions = discover_versions(halmos_dir)
-        if available_versions:
-            for v in available_versions:
-                tasks.append((args.property, v))
+        # Explicit pair: run only if present in ground-truth
+        if (args.property, args.version) in gt_keys:
+            tasks.append((args.property, args.version))
         else:
-            if gt_path.exists():
-                with open(gt_path, 'r') as f:
-                    reader = csv.reader(f)
-                    next(reader)
-                    for row in reader:
-                        if row and len(row) >= 2 and row[0] == args.property:
-                            tasks.append((row[0], row[1]))
-            if not tasks:
-                tasks.append((args.property, 'v1'))
+            print(f"Warning: ({args.property}, {args.version}) not in ground-truth, skipping.",
+                  file=sys.stderr)
+
+    elif args.property:
+        # Only property: run only versions listed in ground-truth for it
+        for (p, v) in sorted(gt_keys):
+            if p == args.property:
+                tasks.append((p, v))
+        if not tasks:
+            print(f"Warning: no ground-truth entries for property '{args.property}'.",
+                  file=sys.stderr)
 
     else:
-        if gt_path.exists():
-            with open(gt_path, 'r') as f:
-                reader = csv.reader(f)
-                next(reader)
-                for row in reader:
-                    if row and len(row) >= 2:
-                        prop_name, ver_name = row[0], row[1]
-                        if args.version and ver_name != args.version:
-                            continue
-                        tasks.append((prop_name, ver_name))
-        else:
-            tasks.append(("unknown-property", "v1"))
+        # No filter: run all ground-truth pairs (optionally restricted by version)
+        for (p, v) in sorted(gt_keys):
+            if args.version and v != args.version:
+                continue
+            tasks.append((p, v))
 
+    # Execute all tasks
     current_results = {}
     for p, v in tasks:
         res = halmos_tool.run_halmos_for_task(p, v, halmos_dir, output_dir, timeout_seconds)
         current_results[(p, v)] = res
 
+    # Write out.csv: current run only (ERR entries excluded)
     out_csv_path = output_dir.joinpath('out.csv')
     out_csv = [utils.OUT_HEADER]
     for (p, v), res in current_results.items():
@@ -106,13 +99,8 @@ def main(args_list=None):
         writer = csv.writer(f)
         writer.writerows(out_csv)
 
-
-        # ------------------------------------------------------------------
-    # 2. halmos.csv = storico cumulativo (merge + ordinamento alfabetico)
-    # ------------------------------------------------------------------
     history_path = (output_dir / ".." / ".." / ".." / "halmos.csv").resolve()
 
-    # (prop, ver) -> res per la run corrente, INCLUSI gli ERR
     all_current = dict(current_results)
     seen = set()
     existing_rows = []
@@ -121,37 +109,43 @@ def main(args_list=None):
         try:
             with open(history_path, 'r', newline='') as f:
                 reader = csv.reader(f)
-                next(reader, None)  # salta header
+                next(reader, None)  # skip header
                 for row in reader:
                     if row and len(row) >= 2:
                         key = (row[0], row[1])
+
+                        # Drop rows not present in ground-truth
+                        if key not in gt_keys:
+                            continue
+
                         if key in all_current:
                             res = all_current[key]
                             if str(res).upper() not in ["ERR"]:
-                                # aggiorna il risultato mantenendo property/version
                                 existing_rows.append([row[0], row[1], res])
-                            # se ERR: scarta (non riaggiunge)
+                            # On ERR: drop the old row
                             seen.add(key)
                         else:
-                            # riga non toccata: preserva
+                            # Untouched row: keep as-is
                             existing_rows.append(row)
         except Exception as e:
             print(f"Warning: could not read history {history_path}: {e}", file=sys.stderr)
 
-    # righe nuove (non presenti nello storico)
+    # Add new rows from current run (only if in ground-truth)
     for (p, v), res in all_current.items():
         if (p, v) not in seen and str(res).upper() not in ["ERR"]:
-            existing_rows.append([p, v, res])
+            if (p, v) in gt_keys:
+                existing_rows.append([p, v, res])
 
-    # ordina alfabeticamente per (property, version)
+    # Sort alphabetically by (property, version)
     existing_rows.sort(key=lambda r: (r[0], r[1]))
 
-    # scrivi
+    # Write back the merged history
     with open(history_path, 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(utils.OUT_HEADER)
         writer.writerows(existing_rows)
 
+    # Report each result
     for (p, v), res in current_results.items():
         print(f"Halmos result appended for {p} ({v}): {res}")
 
