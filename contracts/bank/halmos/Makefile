@@ -38,17 +38,8 @@ PYTHON = python
 .PHONY: run setup contracts directories clean 
 
 #---------------------------- RUN --------------------------------#
-run: $(TABLE)
+run: $(OUT)
 
-$(TABLE): $(CM)
-	@echo "Generating Halmos results table ($(TABLE))..."
-	@echo "#### Halmos" > $(TABLE)
-	@$(PYTHON) ../../../scripts/mdtable_gen.py --input $(CM) >> $(TABLE)
-
-$(CM): $(GROUND_TRUTH) $(OUT)
-	@echo "Generating Halmos confusion matrix ($(CM))..."
-	@$(PYTHON) ../../../scripts/cm_gen.py --ground-truth $(GROUND_TRUTH) --results $(OUT) > $(CM)
-	
 $(OUT): setup
 	@echo "Running Halmos experiments..."
 	@$(PYTHON) ../../../scripts/run_halmos.py \

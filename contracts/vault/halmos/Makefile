@@ -27,8 +27,6 @@ CONTRACTS_DIR = $(BUILD_DIR)/contracts
 LOGS_DIR = $(OUTPUT_DIR)/logs
 LIB_DIR = $(CONTRACTS_DIR)/lib
 OUT = $(OUTPUT_DIR)/out.csv
-CM = $(OUTPUT_DIR)/cm.csv
-TABLE = $(OUTPUT_DIR)/table.md
 
 # Path to vault/
 ROOT_VAULT_HALMOS_CSV = ../halmos.csv
@@ -38,17 +36,7 @@ PYTHON = python
 .PHONY: run setup contracts directories clean
 
 #---------------------------- RUN --------------------------------#
-run: $(TABLE)
-
-$(TABLE): $(CM)
-	@echo "Generating Halmos results table ($(TABLE))..."
-	@echo "#### Halmos" > $(TABLE)
-	@$(PYTHON) ../../../scripts/mdtable_gen.py --input $(CM) >> $(TABLE)
-
-$(CM): $(GROUND_TRUTH) $(OUT)
-	@echo "Generating Halmos confusion matrix ($(CM))..."
-	@$(PYTHON) ../../../scripts/cm_gen.py --ground-truth $(GROUND_TRUTH) --results $(OUT) > $(CM)
-	@cp -f $(OUT) $(ROOT_VAULT_HALMOS_CSV)
+run: $(OUT)
 
 $(OUT): setup
 	@echo "Running Halmos experiments..."
@@ -61,6 +49,7 @@ $(OUT): setup
 		$(if $(prop),--property $(prop),)
 
 #---------------------------- SETUP ------------------------------#
+
 setup: contracts directories
 	 
 contracts: $(CONTRACTS_DIR) $(LIB_DIR)
@@ -97,5 +86,6 @@ $(LIB_DIR):
 	@rm -f $@/ERC20v3.sol
 
 #---------------------------- CLEAN ------------------------------#
+
 clean:
 	rm -rf $(BUILD_DIR)
