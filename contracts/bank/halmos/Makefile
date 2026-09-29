@@ -30,7 +30,7 @@ OUT = $(OUTPUT_DIR)/out.csv
 CM = $(OUTPUT_DIR)/cm.csv
 TABLE = $(OUTPUT_DIR)/table.md
 
-# Persistent history (committed to git, survives 'make clean')
+# Path to bank/
 ROOT_BANK_HALMOS_CSV = ../halmos.csv
 
 PYTHON = python
