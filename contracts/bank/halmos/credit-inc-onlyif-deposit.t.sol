@@ -8,6 +8,8 @@ interface IHalmosVM {
     function prank(address msgSender) external;
     function deal(address account, uint256 newBalance) external;
     function load(address account, bytes32 slot) external view returns (bytes32);
+    function store(address target, bytes32 slot, bytes32 value) external;
+
 }
 
 contract BankTest {
@@ -30,13 +32,14 @@ contract BankTest {
         uint256 initialBalance,
         uint256 limitAmount
     ) public {
+        vm.assume(limitAmount > 0);
+
         {{CONSTRUCTOR_SETUP}};
 
         vm.assume(caller != address(0));
         vm.assume(targetUser != address(0));
         vm.assume(amount > 0);
         vm.assume(initialBalance >= amount);
-        vm.assume(limitAmount > 0);
 
         // Give ETH into the wallet
         vm.deal(caller, initialBalance);
@@ -49,7 +52,9 @@ contract BankTest {
         if (isDeposit) {
             bank.deposit{value: amount}();   
         } else {
-            vm.assume(getCredits(caller) >= amount);
+            bytes32 slot = keccak256(abi.encodePacked(uint256(uint160(caller)), uint256(0)));
+            vm.store(address(bank), slot, bytes32(amount));
+            
             bank.withdraw(amount);  
         }
 

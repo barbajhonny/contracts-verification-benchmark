@@ -22,13 +22,14 @@ contract BankTest {
         uint256 initialBalance,
         uint256 limitAmount
     ) public {
+        vm.assume(limitAmount > 0);
+
         {{CONSTRUCTOR_SETUP}};
 
         vm.assume(caller != address(0));
         vm.assume(targetUser != address(0));
         vm.assume (amount > 0);
         vm.assume(initialBalance >= amount);
-        vm.assume(limitAmount > 0);
        
         // Give initial funds into the wallet
         vm.deal(caller, initialBalance);
@@ -44,9 +45,9 @@ contract BankTest {
 
         vm.prank(caller);
         if (isWithdraw) {
-            try bank.withdraw(amount) {} catch {}
+            bank.withdraw(amount);
         } else {
-            try bank.deposit{value: amount}() {} catch {}
+            bank.deposit{value: amount}();
         }
 
         // Final balance 

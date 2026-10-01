@@ -8,37 +8,45 @@ interface IHalmosVM {
     function prank(address msgSender) external;
     function deal(address account, uint256 newBalance) external;
     function load(address account, bytes32 slot) external view returns (bytes32);
+    function store(address account, bytes32 slot, bytes32 value) external;
 }
 
 contract BankTest {
     IHalmosVM constant vm = IHalmosVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     Bank bank;
 
-    // Helper function to read credits directly from EVM storage
     function getCredits(address user) internal view returns (uint256) {
         bytes32 slot = keccak256(abi.encodePacked(uint256(uint160(user)), uint256(0)));
-        bytes32 value = vm.load(address(bank), slot);
-        return uint256(value);
+        return uint256(vm.load(address(bank), slot));
     }
 
     /// @notice Property: deposit-revert
-    function check_deposit_revert(address caller, uint256 depositAmount, uint256 limitAmount) public {
-        {{CONSTRUCTOR_SETUP}};
-
-        vm.assume(caller != address(0) && caller != address(bank));
-        vm.assume(depositAmount > 1000); 
+    function check_deposit_revert(
+        address caller,
+        uint256 depositAmount,
+        uint256 limitAmount
+    ) public {
         vm.assume(limitAmount > 0);
 
-        vm.deal(caller, type(uint128).max); 
-        
-        vm.prank(caller);
-        bank.deposit{value: type(uint128).max - 500}();
+        {{CONSTRUCTOR_SETUP}};
 
-       vm.prank(caller);
+        vm.assume(caller != address(0) && caller != address(bank) && caller != address(this));
+
+        vm.assume(depositAmount > 0 );
+
+        uint256 initialCredits = type(uint256).max - depositAmount + 1;
+
+        // Directly inject this credit into storage (Slot 0)      
+        bytes32 slot = keccak256(abi.encodePacked(uint256(uint160(caller)), uint256(0)));
+        vm.store(address(bank), slot, bytes32(initialCredits));
+
+        vm.deal(caller, depositAmount);
+
+        vm.prank(caller);
         (bool success, ) = address(bank).call{value: depositAmount}(
             abi.encodeWithSelector(Bank.deposit.selector)
         );
+
         assert(!success);
-    
     }
 }

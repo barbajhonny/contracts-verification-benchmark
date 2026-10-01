@@ -20,6 +20,7 @@ contract BankTest {
         uint256 initialBalance,
         uint256 limitAmount
     ) public {
+        vm.assume(limitAmount > 0);
         {{CONSTRUCTOR_SETUP}};
 
         vm.assume(caller != address(0));
@@ -27,18 +28,19 @@ contract BankTest {
         
         vm.assume(depositAmount > 0);
         vm.assume(initialBalance >= depositAmount);
-        vm.assume(limitAmount > 0);
 
         vm.deal(caller, initialBalance);
 
         uint256 bankEthBefore = address(bank).balance;
 
         vm.prank(caller);
-        
-        bank.deposit{value: depositAmount}();
+        (bool success, ) = address(bank).call{value: depositAmount}(
+            abi.encodeWithSelector(Bank.deposit.selector)
+        );
 
-        uint256 bankEthAfter = address(bank).balance;
-        
-        assert(bankEthAfter == bankEthBefore + depositAmount);
+        if (success) {
+            uint256 bankEthAfter = address(bank).balance;
+            assert(bankEthAfter == bankEthBefore + depositAmount);
+        }
     }
 }

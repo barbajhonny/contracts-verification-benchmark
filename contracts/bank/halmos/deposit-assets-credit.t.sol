@@ -28,6 +28,8 @@ contract BankTest {
         uint256 initialBalance,
         uint256 limitAmount
     ) public {
+        
+        vm.assume(limitAmount > 0);
         {{CONSTRUCTOR_SETUP}};
 
         vm.assume(caller != address(0));
@@ -35,7 +37,6 @@ contract BankTest {
         vm.assume(caller != address(vm));
 
         vm.assume(initialBalance >= depositAmount);
-        vm.assume(limitAmount > 0);
         vm.deal(caller, initialBalance);
 
         uint256 old_user_credit = getCredits(caller);
