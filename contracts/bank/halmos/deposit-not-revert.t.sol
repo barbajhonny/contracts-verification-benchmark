@@ -18,6 +18,7 @@ contract BankTest {
         address caller,
         uint256 depositAmount,
         uint256 amount,
+        uint256 initialBalance,
         uint256 limitAmount
     ) public {
 
