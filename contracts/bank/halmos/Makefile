@@ -30,6 +30,9 @@ OUT = $(OUTPUT_DIR)/out.csv
 CM = $(OUTPUT_DIR)/cm.csv
 TABLE = $(OUTPUT_DIR)/table.md
 
+# Handler directory
+HANDLER_DIR = $(CONTRACTS_DIR)/BankHandler
+
 # Path to bank/
 ROOT_BANK_HALMOS_CSV = ../halmos.csv
 
@@ -51,9 +54,10 @@ $(OUT): setup
 		$(if $(prop),--property $(prop),)
 
 #---------------------------- SETUP ------------------------------#
+
 setup: contracts directories
 
-contracts: $(CONTRACTS_DIR) $(LIB_DIR)
+contracts: $(CONTRACTS_DIR) $(LIB_DIR) $(HANDLER_DIR)
 	@echo "Generating version-specific test files for Halmos..."
 	@cp ./foundry.toml $(CONTRACTS_DIR)/
 	@mkdir -p $(CONTRACTS_DIR)/versions
@@ -89,6 +93,10 @@ $(LIB_DIR):
 	@cp -r ../../../lib/ $@
 	@rm -f $@/ERC20v2.sol
 	@rm -f $@/ERC20v3.sol
+
+$(HANDLER_DIR):
+	@mkdir -p $@
+	@cp ./BankHandler/bankHandler.sol $(HANDLER_DIR)/
 
 #---------------------------- CLEAN ------------------------------#
 
