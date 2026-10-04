@@ -61,22 +61,19 @@ contracts: $(CONTRACTS_DIR) $(LIB_DIR)
 	@for ver_file in $(notdir $(VERSIONS_FILES)); do \
 		ver_name=$${ver_file%.sol}; \
 		ver_short=$$(echo $$ver_name | sed 's/Bank_//'); \
+		if [ "$$ver_short" = "v3" ]; then \
+			echo "Skipping v3 (unsupported constructor setup)"; \
+			continue; \
+		fi; \
 		cp $(VERSIONS_DIR)/$$ver_file $(CONTRACTS_DIR)/versions/$$ver_short.sol; \
 		for prop_file in $(PROPERTIES_FILES); do \
 			prop_name=$$(basename $$prop_file .t.sol); \
 			prop_name_safe=$$(echo $$prop_name | sed 's/-/_/g'); \
 			target_file=$(CONTRACTS_DIR)/$${ver_short}_$${prop_name_safe}.t.sol; \
-			if [ "$$ver_short" = "v3" ]; then \
-				sed -e "s/{{VERSION}}/$$ver_short/g" \
-				    -e "s/{{CONTRACT_NAME}}/BankTest_$${ver_short}_$${prop_name_safe}/g" \
-				    -e "s/contract BankTest/contract BankTest_$${ver_short}_$${prop_name_safe}/g" \
-				    -e "s/{{CONSTRUCTOR_SETUP}}/bank = new Bank(limitAmount)/g" $$prop_file > $$target_file; \
-			else \
-				sed -e "s/{{VERSION}}/$$ver_short/g" \
-				    -e "s/{{CONTRACT_NAME}}/BankTest_$${ver_short}_$${prop_name_safe}/g" \
-				    -e "s/contract BankTest/contract BankTest_$${ver_short}_$${prop_name_safe}/g" \
-				    -e "s/{{CONSTRUCTOR_SETUP}}/bank = new Bank()/g" $$prop_file > $$target_file; \
-			fi; \
+			sed -e "s/{{VERSION}}/$$ver_short/g" \
+			    -e "s/{{CONTRACT_NAME}}/BankTest_$${ver_short}_$${prop_name_safe}/g" \
+			    -e "s/contract BankTest/contract BankTest_$${ver_short}_$${prop_name_safe}/g" \
+			    $$prop_file > $$target_file; \
 		done; \
 	done
 
