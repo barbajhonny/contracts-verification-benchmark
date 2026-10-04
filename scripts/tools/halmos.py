@@ -85,8 +85,8 @@ def run_halmos_for_task(p, v, halmos_dir, output_dir, timeout_seconds):
         if matches:
             target_file_path = matches[0]
 
-    # Verify if test function exists
-    if not check_test_exists_in_contracts(halmos_dir, clean_p):
+    # Skip versions for which no version-specific test file was generated
+    if not target_file_path or not target_file_path.exists():
         return utils.ERROR
 
     print(f"Running Halmos verification for property: '{p}', version: ({v})")
