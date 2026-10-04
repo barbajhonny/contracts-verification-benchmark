@@ -2,67 +2,41 @@
 pragma solidity >=0.8.2;
 
 import "target/{{VERSION}}.sol";
+import "./BankHandler/bankHandler.sol";
+import {SymTest} from "halmos-cheatcodes/SymTest.sol";
 
-interface IHalmosVM {
-    function assume(bool condition) external;
-    function prank(address msgSender) external;
-    function deal(address account, uint256 newBalance) external;
-    function load(address account, bytes32 slot) external view returns (bytes32);
-}
 
-contract BankTest {
+contract BankTest is SymTest {
     IHalmosVM constant vm = IHalmosVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
-    Bank bank;
 
-    // Helper function to read credits directly from EVM storage 
-    function getCredits(address user) internal view returns (uint256) {
-        bytes32 slot = keccak256(abi.encodePacked(uint256(uint160(user)), uint256(0)));
-        bytes32 value = vm.load(address(bank), slot);
-        return uint256(value);
+    Bank bank;
+    BankHandler handler;
+
+    function setUp() public {
+        bank = new Bank();
+        handler = new BankHandler(address(bank));
+        uint256 handlerBalance = svm.createUint256("handlerBalance");
+        vm.deal(address(handler), handlerBalance);
     }
 
-    /// @notice Property: credit-dec-onlyif-withdraw
-    function check_credit_dec_onlyif_withdraw(
-        bool isWithdraw, 
-        uint256 amount,
-        address caller,  
-        address targetUser,
-        uint256 initialBalance,
-        uint256 initialDeposit,
-        uint256 limitAmount
-    ) public {
-        vm.assume(limitAmount > 0);
-        {{CONSTRUCTOR_SETUP}};
+    function creditsSlot(address user) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(uint256(uint160(user)), uint256(0)));
+    }
 
-        vm.assume(caller != address(0));
-        vm.assume(targetUser != address(0));
-        vm.assume(initialBalance >= initialDeposit);
-        vm.assume(initialDeposit > 0);
-        vm.assume(amount > 0);
-    
-        // Give initial funds
-        vm.deal(caller, initialBalance);
-        vm.deal(targetUser, initialBalance);
-        
-        // Give initial credits to targetUser
-        vm.prank(targetUser);
-        bank.deposit{value: initialDeposit}();
+    function getCredits(address user) internal view returns (uint256) {
+        return uint256(vm.load(address(bank), creditsSlot(user)));
+    }
 
-        uint256 currb = getCredits(targetUser);
+    /// @custom:halmos --invariant-depth 3
+    function invariant_credit_dec_onlyif_withdraw() public view {
+        if (!handler.hasOperated()) return;
 
-        vm.prank(caller);
-        if (isWithdraw) {
-            vm.assume(initialDeposit >= amount); 
-            bank.withdraw(amount);
-        } else {
-            bank.deposit{value: amount}();
-        }
+        address caller = handler.lastCaller();
+        uint256 before = handler.lastCreditsBefore();
+        uint256 afterBal = getCredits(caller);
 
-        uint256 newb = getCredits(targetUser);
-
-        if (newb < currb) {
-            assert(isWithdraw);
-            assert(caller == targetUser);
+        if (afterBal < before) {
+            assert(handler.lastWasWithdraw());
         }
     }
 }
