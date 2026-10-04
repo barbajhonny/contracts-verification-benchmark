@@ -6,5 +6,6 @@ libs = ['lib']
 
 remappings = [
     'target/=versions/',
-    'lib/=lib/'
+    'lib/=lib/',
+    'halmos-cheatcodes/=lib/halmos-cheatcodes/src/'
 ]
