@@ -41,6 +41,9 @@ def extract_test_contract_name(file_path, clean_p):
     """Extract the specific contract name enclosing the test function."""
     try:
         content = Path(file_path).read_text(encoding="utf-8")
+        # Ignore comments: e.g. "// ... contract target" is not a contract declaration
+        content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
+        content = re.sub(r'//[^\n]*', '', content)
 
         test_search = clean_p
         if test_search.startswith("check_"):
@@ -68,25 +71,60 @@ def extract_test_contract_name(file_path, clean_p):
         return None
 
 
+VERSION_SPECIFIC_FILE = re.compile(r"^v\d+_|_v\d+\.t\.sol$")
+
+
+def find_test_file(halmos_path, p, v):
+    """
+    Locate the .t.sol file for property p and version v. Supported layouts:
+    - version-specific: '<v>_<p>.t.sol' (generated, e.g. contracts/bank) or
+      '<Contract>_<p>_<v>.t.sol' (e.g. regression/call_verifier)
+    - generic: '<p>.t.sol' or '<Contract>_<p>.t.sol' (e.g. regression/payable)
+    The property name is matched both with '-' and with '_'.
+    A version-specific file of another version is never used as a fallback.
+    """
+    names = {p, p.replace('-', '_')}
+
+    def files(pattern):
+        return sorted(f for f in halmos_path.rglob(pattern) if f.is_file())
+
+    if v:
+        for n in names:
+            matches = files(f"{v}_{n}.t.sol") + files(f"*_{n}_{v}.t.sol")
+            if matches:
+                return matches[0]
+
+    for n in names:
+        matches = files(f"{n}.t.sol") + files(f"*_{n}.t.sol")
+        matches = [f for f in matches if not VERSION_SPECIFIC_FILE.search(f.name)]
+        if matches:
+            return matches[0]
+
+    # Last resort: a generic .t.sol file defining check_<p>/invariant_<p>
+    # (covers file names that do not match the property name exactly)
+    test_fun = re.compile(rf"function\s+(check|invariant)_{re.escape(p.replace('-', '_'))}\s*\(")
+    for f in files("*.t.sol"):
+        if VERSION_SPECIFIC_FILE.search(f.name):
+            continue
+        try:
+            if test_fun.search(f.read_text(encoding="utf-8")):
+                return f
+        except Exception:
+            continue
+
+    return None
+
+
 def run_halmos_for_task(p, v, halmos_dir, output_dir, timeout_seconds):
     """Execute Halmos verification for a given property and version task."""
     clean_p = p.replace('-', '_')
     halmos_path = Path(halmos_dir)
     target_file_path = None
 
-    # Locate target .t.sol file
-    if v:
-        matches = list(halmos_path.rglob(f"{v}_{p}.t.sol")) + list(halmos_path.rglob(f"{v}_{clean_p}.t.sol"))
-        if matches:
-            target_file_path = matches[0]
-
-    if not target_file_path:
-        matches = list(halmos_path.rglob(f"{p}.t.sol")) + list(halmos_path.rglob(f"{clean_p}.t.sol"))
-        if matches:
-            target_file_path = matches[0]
+    target_file_path = find_test_file(halmos_path, p, v)
 
     # Skip versions for which no version-specific test file was generated
-    if not target_file_path or not target_file_path.exists():
+    if not target_file_path:
         return utils.ERROR
 
     print(f"Running Halmos verification for property: '{p}', version: ({v})")
