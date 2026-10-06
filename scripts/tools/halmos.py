@@ -100,8 +100,6 @@ def find_test_file(halmos_path, p, v):
         if matches:
             return matches[0]
 
-    # Last resort: a generic .t.sol file defining check_<p>/invariant_<p>
-    # (covers file names that do not match the property name exactly)
     test_fun = re.compile(rf"function\s+(check|invariant)_{re.escape(p.replace('-', '_'))}\s*\(")
     for f in files("*.t.sol"):
         if VERSION_SPECIFIC_FILE.search(f.name):

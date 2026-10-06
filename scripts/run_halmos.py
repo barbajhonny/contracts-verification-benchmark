@@ -16,6 +16,19 @@ from scripts.tools import halmos as halmos_tool
 DEFAULT_TIMEOUT = '10m'
 
 
+def read_gt_keys(gt_path):
+    """Return the set of (property, version) pairs listed in a ground-truth file."""
+    keys = set()
+    if gt_path.exists():
+        with open(gt_path, 'r', newline='') as f:
+            reader = csv.reader(f)
+            next(reader, None)  # skip header
+            for row in reader:
+                if row and len(row) >= 2:
+                    keys.add((row[0], row[1]))
+    return keys
+
+
 def main(args_list=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--halmos-dir', '-hd', help='Halmos working directory.', required=False)
@@ -47,14 +60,7 @@ def main(args_list=None):
         gt_path = Path("./ground-truth.csv")
 
     # Read ground-truth: set of valid (property, version) pairs
-    gt_keys = set()
-    if gt_path.exists():
-        with open(gt_path, 'r', newline='') as f:
-            reader = csv.reader(f)
-            next(reader, None)  # skip header
-            for row in reader:
-                if row and len(row) >= 2:
-                    gt_keys.add((row[0], row[1]))
+    gt_keys = read_gt_keys(gt_path)
 
     tasks = []
 
@@ -101,6 +107,11 @@ def main(args_list=None):
 
     history_path = (output_dir / ".." / ".." / ".." / "halmos.csv").resolve()
 
+
+    history_gt_keys = read_gt_keys(history_path.parent / "ground-truth.csv")
+    for case_gt in history_path.parent.glob("*/ground-truth.csv"):
+        history_gt_keys |= read_gt_keys(case_gt)
+
     all_current = dict(current_results)
     seen = set()
     existing_rows = []
@@ -115,14 +126,14 @@ def main(args_list=None):
                         key = (row[0], row[1])
 
                         # Drop rows not present in ground-truth
-                        if key not in gt_keys:
+                        if key not in history_gt_keys:
                             continue
 
                         if key in all_current:
                             res = all_current[key]
                             if str(res).upper() not in ["ERR"]:
                                 existing_rows.append([row[0], row[1], res])
-                            # On ERR: drop the old row
+                            # On ERR (e.g. no test file for this version): drop the old row
                             seen.add(key)
                         else:
                             # Untouched row: keep as-is
