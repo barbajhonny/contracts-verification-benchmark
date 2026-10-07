@@ -1,88 +1,159 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.2;
 
-/// @notice Interfaccia minima per le cheatcode di Halmos/Foundry usate dall'Handler
-interface IHalmosVM {
-    function load(address account, bytes32 slot) external view returns (bytes32);
-    function deal(address account, uint256 newBalance) external;
+import {CommonBase} from "forge-std/Base.sol";
+import {SymTest} from "halmos-cheatcodes/SymTest.sol";
+
+/// @notice Getter injected into every Bank version (see ../getters.sol)
+interface IBankGetters {
+    function getCredits(address user) external view returns (uint256);
 }
 
-/// @notice Handler per la proprietà credit-dec-onlyif-withdraw.
-/// Viene usato da Halmos come contratto target per esplorare automaticamente
-/// sequenze di chiamate a deposit/withdraw. Traccia l'ultima operazione eseguita
-/// (chi l'ha chiamata, quanto era il credito prima, se era un withdraw) per
-/// permettere all'invariante di verificare la proprietà.
+/// @notice Contract user: a Bank user that is a smart contract.
 ///
-/// Nota: questo Handler NON importa Bank. Riceve l'indirizzo nel costruttore
-/// e usa chiamate a basso livello, così è compatibile con tutte le 17 versioni
-/// di Bank senza bisogno di sostituzioni {{VERSION}}.
-contract BankHandler {
-    IHalmosVM constant vm = IHalmosVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
-
-    address public bank;
-
-    // Stato tracciato per l'ultima operazione
-    address public lastCaller;
-    uint256 public lastCreditsBefore;
-    bool public lastWasWithdraw;
-    bool public hasOperated;
+/// When it receives ETH (e.g. from the low-level call in `withdraw`), its `receive`
+/// SYMBOLICALLY chooses one of these behaviours:
+///   0. accepts and does nothing (like an EOA)
+///   1. reverts
+///   2. makes an arbitrary symbolic call to Bank (svm.createCalldata),
+///      executed by itself or by the other contract user (reentrancy)
+///   3. forwards ETH to an arbitrary symbolic address
+///
+/// Bound: each contract user reacts at most once per transaction,
+/// otherwise the exploration of reentrant calls would not terminate.
+contract BankUser is CommonBase, SymTest {
+    address public immutable bank;
+    address public immutable handler;
+    BankUser public peer;
+    bool public reacted;
 
     constructor(address _bank) {
         bank = _bank;
+        handler = msg.sender;
     }
 
-    // --- Utilità per leggere lo slot credits ---
-    // Assunzione: credits è sempre allo slot 0 in tutte le versioni di Bank
-    function creditsSlot(address user) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(uint256(uint160(user)), uint256(0)));
+    function setPeer(BankUser _peer) external {
+        require(msg.sender == handler);
+        peer = _peer;
     }
 
-    function getCredits(address user) internal view returns (uint256) {
-        return uint256(vm.load(bank, creditsSlot(user)));
+    /// @notice called by the Handler at the beginning of every transaction
+    function newTransaction() external {
+        require(msg.sender == handler);
+        reacted = false;
     }
 
-    // --- Funzioni target scoperte automaticamente da Halmos ---
+    receive() external payable {
+        if (reacted) return;
+        reacted = true;
 
-    /// @notice Wrapper per deposit(). Registra lo stato prima della chiamata.
-    function deposit(uint256 amount) public payable {
-        // Normalizza amount per evitare overflow e valori nulli
-        amount = amount % 1 ether;
-        if (amount == 0) amount = 1;
-
-        // Registra lo stato dell'ultima operazione
-        lastCaller = msg.sender;
-        lastCreditsBefore = getCredits(msg.sender);
-        lastWasWithdraw = false;
-        hasOperated = true;
-
-        // Inoltra la chiamata a Bank.deposit() passando msg.value = amount
-        (bool ok,) = bank.call{value: amount}(
-            abi.encodeWithSignature("deposit()")
-        );
-        // Se la chiamata fallisce (es. per una versione con firma diversa),
-        // lo stato di Bank non cambia e l'invariante non viene violato.
-        ok;
+        uint256 choice = svm.createUint(2, "receive_choice");
+        if (choice == 0) return;
+        if (choice == 1) revert();
+        if (choice == 2) {
+            BankUser actor = svm.createBool("receive_peer_acts") ? peer : this;
+            actor.act(svm.createCalldata(bank), svm.createUint256("receive_call_value"));
+            return;
+        }
+        address to = svm.createAddress("receive_to");
+        uint256 value = svm.createUint256("receive_transfer_value");
+        vm.assume(value <= address(this).balance);
+        (bool ok,) = payable(to).call{value: value}("");
+        ok; // the outcome is irrelevant: the user may ignore it
     }
 
-    /// @notice Wrapper per withdraw(uint). Registra lo stato prima della chiamata.
-    function withdraw(uint256 amount) public {
-        // Normalizza amount
-        amount = amount % 1 ether;
-        if (amount == 0) amount = 1;
+    /// @notice call to Bank performed by this contract user (msg.sender = this)
+    function act(bytes memory data, uint256 value) external {
+        require(msg.sender == address(this) || msg.sender == address(peer));
+        vm.assume(value <= address(this).balance);
+        (bool ok,) = bank.call{value: value}(data);
+        ok; // the outcome is irrelevant: the user may ignore it
+    }
+}
 
-        // Registra lo stato dell'ultima operazione
-        lastCaller = msg.sender;
-        lastCreditsBefore = getCredits(msg.sender);
-        lastWasWithdraw = true;
-        hasOperated = true;
+/// @notice Generic Handler for the Bank invariant tests.
+///
+/// Halmos calls `call(value)` with symbolic msg.sender, tx.origin and arguments.
+/// The Handler forwards to Bank a symbolic call to ANY non-view function
+/// of the version under test (svm.createCalldata), preserving
+/// sender and tx.origin with vm.prank. Before and after the call it records the
+/// ghost variables that the invariants use to reason about the transition.
+///
+/// The transaction sender is chosen symbolically among:
+///   - an arbitrary EOA (Halmos' symbolic msg.sender);
+///   - one of the two contract users (BankUser), which can react when they
+///     receive ETH. Two contract users are needed so that, during the transaction
+///     of one, the other can act on Bank (e.g. A's credit decreases inside a
+///     `withdraw` by B).
+/// The ghosts wrap the whole transaction, so they include the effects of
+/// any reentrant calls.
+///
+/// `call` is NOT payable: with vm.prank Halmos charges the ETH of the forwarded
+/// call to the simulated sender. If the Handler also received msg.value,
+/// the user would pay twice and only 0-wei deposits would succeed.
+///
+/// In Halmos every address starts with an ETH balance of 0 (except the test contract),
+/// so before the call the sender is guaranteed at least `value` wei:
+/// this amounts to assuming that the user has enough ETH for the transaction.
+///
+/// The Handler does not import Bank: it is version-independent.
+contract BankHandler is CommonBase, SymTest {
+    
+    address public immutable bank;
+    /// @notice observed user: a symbolic address, so it represents an arbitrary user
+    address public immutable user;
+    BankUser public immutable userContract0;
+    BankUser public immutable userContract1;
 
-        // Inoltra la chiamata a Bank.withdraw(uint)
-        (bool ok,) = bank.call(
-            abi.encodeWithSignature("withdraw(uint256)", amount)
-        );
-        ok;
+    // --- ghost: last (non-reverted) transaction executed on Bank ---
+    bytes4 public lastSelector;
+    address public lastSender;
+    address public lastOrigin;
+    uint256 public lastValue;
+    uint256 public userCreditBefore;
+    uint256 public userCreditAfter;
+
+    constructor(address _bank, address _user) {
+        bank = _bank;
+        user = _user;
+        userContract0 = new BankUser(_bank);
+        userContract1 = new BankUser(_bank);
+        userContract0.setPeer(userContract1);
+        userContract1.setPeer(userContract0);
     }
 
-    /// @notice Riceve fondi per poter effettuare deposit con msg.value
-    receive() external payable {}
+    function call(uint256 value) external {
+        bytes memory data = svm.createCalldata(bank);
+
+        // tx.origin is always an EOA (in particular neither address(0) nor a contract)
+        vm.assume(tx.origin != address(0));
+        vm.assume(tx.origin.code.length == 0);
+
+        // sender: an arbitrary EOA or one of the contract users
+        address sender = msg.sender;
+        if (svm.createBool("sender_is_contract")) {
+            sender = svm.createBool("sender_is_contract0") ? address(userContract0) : address(userContract1);
+        } else {
+            vm.assume(msg.sender.code.length == 0);
+        }
+
+        userContract0.newTransaction();
+        userContract1.newTransaction();
+
+        if (sender.balance < value) vm.deal(sender, value);
+
+        uint256 creditBefore = IBankGetters(bank).getCredits(user);
+
+        vm.prank(sender, tx.origin);
+        (bool ok,) = bank.call{value: value}(data);
+        // a reverted transaction does not change the state: discard it
+        require(ok);
+
+        lastSelector = bytes4(data);
+        lastSender = sender;
+        lastOrigin = tx.origin;
+        lastValue = value;
+        userCreditBefore = creditBefore;
+        userCreditAfter = IBankGetters(bank).getCredits(user);
+    }
 }
