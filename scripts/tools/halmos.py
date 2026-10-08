@@ -139,7 +139,8 @@ def run_halmos_for_task(p, v, halmos_dir, output_dir, timeout_seconds):
         halmos_cmd = [
             "halmos",
             "--match-test", test_match,
-            "--solver-timeout-assertion", solver_timeout_ms
+            "--solver-timeout-assertion", solver_timeout_ms,
+            "--early-exit"
         ]
 
         if target_file_path and target_file_path.exists():
