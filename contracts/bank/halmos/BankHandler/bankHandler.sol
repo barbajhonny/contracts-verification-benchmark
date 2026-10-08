@@ -112,6 +112,8 @@ contract BankHandler is CommonBase, SymTest {
     uint256 public lastValue;
     uint256 public userCreditBefore;
     uint256 public userCreditAfter;
+    uint256 public userBalanceBefore;
+    uint256 public userBalanceAfter;
 
     constructor(address _bank, address _user) {
         bank = _bank;
@@ -143,6 +145,7 @@ contract BankHandler is CommonBase, SymTest {
         if (sender.balance < value) vm.deal(sender, value);
 
         uint256 creditBefore = IBankGetters(bank).getCredits(user);
+        uint256 balanceBefore = user.balance;
 
         vm.prank(sender, tx.origin);
         (bool ok,) = bank.call{value: value}(data);
@@ -155,5 +158,7 @@ contract BankHandler is CommonBase, SymTest {
         lastValue = value;
         userCreditBefore = creditBefore;
         userCreditAfter = IBankGetters(bank).getCredits(user);
+        userBalanceBefore = balanceBefore;
+        userBalanceAfter = user.balance;
     }
 }
