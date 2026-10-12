@@ -96,11 +96,9 @@ contract BankUser is CommonBase, SymTest {
 /// so before the call the sender is guaranteed at least `value` wei:
 /// this amounts to assuming that the user has enough ETH for the transaction.
 ///
-/// The Handler does not import Bank: it is version-independent.
 contract BankHandler is CommonBase, SymTest {
     
     address public immutable bank;
-    /// @notice observed user: a symbolic address, so it represents an arbitrary user
     address public immutable user;
     BankUser public immutable userContract0;
     BankUser public immutable userContract1;
@@ -110,7 +108,6 @@ contract BankHandler is CommonBase, SymTest {
     address public lastSender;
     address public lastOrigin;
     uint256 public lastValue;
-    /// @notice first argument of the call (e.g. `amount` in `withdraw(amount)`), 0 if none
     uint256 public lastAmount;
     uint256 public userCreditBefore;
     uint256 public userCreditAfter;
