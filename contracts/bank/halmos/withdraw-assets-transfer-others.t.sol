@@ -2,55 +2,49 @@
 pragma solidity >=0.8.2;
 
 import "target/{{VERSION}}.sol";
+import "./BankHandler/bankHandler.sol";
+import {SymTest} from "halmos-cheatcodes/SymTest.sol";
+import {Test} from "forge-std/Test.sol";
 
-interface IHalmosVM {
-    function assume(bool condition) external;
-    function prank(address msgSender) external;
-    function deal(address account, uint256 newBalance) external;
-}
-
-contract BankTest {
-    IHalmosVM constant vm = IHalmosVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+/// Property withdraw-assets-transfer-others:
+/// after a non-reverting `withdraw(amount)`, the ETH balance of any user (except, possibly, the sender) are preserved.
+contract BankTest is Test, SymTest {
     Bank bank;
+    BankHandler handler;
 
-    /// @notice Property: withdraw-assets-transfer-others
-    function check_withdraw_assets_transfer_others(
-        address caller,
-        address otherUser,
-        uint256 depositAmount,
-        uint256 withdrawAmount,
-        uint256 otherDepositAmount,
-        uint256 amount,
-        uint256 limitAmount
-    ) public {
-        {{CONSTRUCTOR_SETUP}};
-
-        vm.assume(caller != address(0) && caller != address(bank));
-        vm.assume(otherUser != address(0) && otherUser != address(bank));
-        vm.assume(caller != otherUser);
+    function setUp() public {
         
-        vm.assume(amount >= depositAmount);
-        vm.assume(amount >= otherDepositAmount);
-        vm.assume(depositAmount > 0);
-        vm.assume(otherDepositAmount > 0);
-        vm.assume(withdrawAmount <= depositAmount); 
-        vm.assume(limitAmount > 0);
+        address owner = svm.createAddress("owner");
+        vm.startPrank(owner);
+        {{CONSTRUCTOR_SETUP}};
+        vm.stopPrank();
 
-        vm.deal(caller, amount);
-        vm.deal(otherUser, amount);
+        address user = svm.createAddress("A");
+        handler = new BankHandler(address(bank), user);
 
-        vm.prank(otherUser);
-        bank.deposit{value: otherDepositAmount}();
+        _assumeUser(owner);
+        _assumeUser(user);
+        excludeSender(address(0));
+        excludeSender(address(bank));
+        excludeSender(address(handler));
+        excludeSender(address(this));
 
-        vm.prank(caller);
-        bank.deposit{value: depositAmount}();
+        // Halmos must explore only the Handler: direct calls to Bank
+        // would skip the update of the ghost variables
+        targetContract(address(handler));
+    }
 
-        uint256 otherEthBalanceBefore = otherUser.balance;
+    function _assumeUser(address a) internal view {
+        vm.assume(a != address(0));
+        vm.assume(a != address(bank));
+        vm.assume(a != address(handler));
+        vm.assume(a != address(this));
+    }
 
-        vm.prank(caller);
-        bank.withdraw(withdrawAmount);
-
-        uint256 otherEthBalanceAfter = otherUser.balance;
-        assert(otherEthBalanceAfter == otherEthBalanceBefore);
+    /// @custom:halmos --invariant-depth 3
+    function invariant_withdraw_assets_transfer_others() public view {
+        if (handler.lastSelector() == Bank.withdraw.selector && handler.lastSender() != handler.user()) {
+            assert(handler.userBalanceAfter() == handler.userBalanceBefore());
+        }
     }
 }

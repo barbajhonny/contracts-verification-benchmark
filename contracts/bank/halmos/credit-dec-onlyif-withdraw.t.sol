@@ -14,18 +14,15 @@ contract BankTest is Test, SymTest {
     BankHandler handler;
 
     function setUp() public {
-        // symbolic owner: an arbitrary user, so the owner-only functions
-        // (setP, setl, ...) are explored when a sender coincides with it
+        
         address owner = svm.createAddress("owner");
         vm.startPrank(owner);
         {{CONSTRUCTOR_SETUP}};
         vm.stopPrank();
 
-        // observed user A: symbolic, so it represents an arbitrary user
         address user = svm.createAddress("A");
         handler = new BankHandler(address(bank), user);
 
-        // the users (owner, A, sender) are neither address(0) nor the test contracts
         _assumeUser(owner);
         _assumeUser(user);
         excludeSender(address(0));

@@ -2,60 +2,51 @@
 pragma solidity >=0.8.2;
 
 import "target/{{VERSION}}.sol";
+import "./BankHandler/bankHandler.sol";
+import {SymTest} from "halmos-cheatcodes/SymTest.sol";
+import {Test} from "forge-std/Test.sol";
 
-interface IHalmosVM {
-    function assume(bool condition) external;
-    function prank(address msgSender) external;
-    function deal(address account, uint256 newBalance) external;
-}
-
-contract BankTest {
-    IHalmosVM constant vm = IHalmosVM(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+/// Property assets-inc-onlyif-withdraw:
+/// if the ETH balance of a user A is increased after a transaction (of the Bank contract),
+/// then that transaction must be a `withdraw` where A is the sender.
+contract BankTest is Test, SymTest {
     Bank bank;
+    BankHandler handler;
 
-    /// @notice Property: assets-inc-onlyif-withdraw
-    function check_assets_inc_onlyif_withdraw(
-        bool isWithdraw,
-        uint256 amount,
-        address caller,
-        address targetUser,
-        uint256 initialBalance,
-        uint256 limitAmount
-    ) public {
-        vm.assume(limitAmount > 0);
-
+    function setUp() public {
+        
+        address owner = svm.createAddress("owner");
+        vm.startPrank(owner);
         {{CONSTRUCTOR_SETUP}};
+        vm.stopPrank();
 
-        vm.assume(caller != address(0));
-        vm.assume(targetUser != address(0));
-        vm.assume (amount > 0);
-        vm.assume(initialBalance >= amount);
-       
-        // Give initial funds into the wallet
-        vm.deal(caller, initialBalance);
-        vm.deal(targetUser, initialBalance);
+        address user = svm.createAddress("A");
+        handler = new BankHandler(address(bank), user);
 
-        if (isWithdraw) {
-            vm.prank(caller);
-            bank.deposit{value: amount}();
-        }
+        _assumeUser(owner);
+        _assumeUser(user);
+        excludeSender(address(0));
+        excludeSender(address(bank));
+        excludeSender(address(handler));
+        excludeSender(address(this));
 
-        // Initial balance
-        uint256 currb = targetUser.balance;
+        // Halmos must explore only the Handler: direct calls to Bank
+        // would skip the update of the ghost variables
+        targetContract(address(handler));
+    }
 
-        vm.prank(caller);
-        if (isWithdraw) {
-            bank.withdraw(amount);
-        } else {
-            bank.deposit{value: amount}();
-        }
+    function _assumeUser(address a) internal view {
+        vm.assume(a != address(0));
+        vm.assume(a != address(bank));
+        vm.assume(a != address(handler));
+        vm.assume(a != address(this));
+    }
 
-        // Final balance 
-        uint256 newb = targetUser.balance;
-
-        if (newb > currb) {
-            assert(isWithdraw);
-            assert(caller == targetUser);
+    /// @custom:halmos --invariant-depth 3
+    function invariant_assets_inc_onlyif_withdraw() public view {
+        if (handler.userBalanceAfter() > handler.userBalanceBefore()) {
+            assert(handler.lastSelector() == Bank.withdraw.selector);
+            assert(handler.lastSender() == handler.user());
         }
     }
 }

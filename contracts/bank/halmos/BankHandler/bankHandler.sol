@@ -110,10 +110,14 @@ contract BankHandler is CommonBase, SymTest {
     address public lastSender;
     address public lastOrigin;
     uint256 public lastValue;
+    /// @notice first argument of the call (e.g. `amount` in `withdraw(amount)`), 0 if none
+    uint256 public lastAmount;
     uint256 public userCreditBefore;
     uint256 public userCreditAfter;
     uint256 public userBalanceBefore;
     uint256 public userBalanceAfter;
+    uint256 public bankBalanceBefore;
+    uint256 public bankBalanceAfter;
 
     constructor(address _bank, address _user) {
         bank = _bank;
@@ -146,6 +150,7 @@ contract BankHandler is CommonBase, SymTest {
 
         uint256 creditBefore = IBankGetters(bank).getCredits(user);
         uint256 balanceBefore = user.balance;
+        uint256 bankBefore = bank.balance;
 
         vm.prank(sender, tx.origin);
         (bool ok,) = bank.call{value: value}(data);
@@ -156,9 +161,17 @@ contract BankHandler is CommonBase, SymTest {
         lastSender = sender;
         lastOrigin = tx.origin;
         lastValue = value;
+        uint256 amount;
+        if (data.length >= 36) {
+            // skip the length word (32 bytes) and the selector (4 bytes)
+            assembly { amount := mload(add(data, 36)) }
+        }
+        lastAmount = amount;
         userCreditBefore = creditBefore;
         userCreditAfter = IBankGetters(bank).getCredits(user);
         userBalanceBefore = balanceBefore;
         userBalanceAfter = user.balance;
+        bankBalanceBefore = bankBefore;
+        bankBalanceAfter = bank.balance;
     }
 }
