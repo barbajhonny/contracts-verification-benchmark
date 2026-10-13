@@ -109,10 +109,16 @@ contract BankHandler is CommonBase, SymTest {
     address public lastOrigin;
     uint256 public lastValue;
     uint256 public lastAmount;
+    // tracked for the fixed `user` (A) — use when the property is about a specific known address
     uint256 public userCreditBefore;
     uint256 public userCreditAfter;
     uint256 public userBalanceBefore;
     uint256 public userBalanceAfter;
+    // tracked for the actual sender — use when the property must hold for any address
+    uint256 public senderCreditBefore;
+    uint256 public senderCreditAfter;
+    uint256 public senderBalanceBefore;
+    uint256 public senderBalanceAfter;
     uint256 public bankBalanceBefore;
     uint256 public bankBalanceAfter;
 
@@ -147,6 +153,8 @@ contract BankHandler is CommonBase, SymTest {
 
         uint256 creditBefore = IBankGetters(bank).getCredits(user);
         uint256 balanceBefore = user.balance;
+        uint256 senderCreditBefore_ = IBankGetters(bank).getCredits(sender);
+        uint256 senderBalanceBefore_ = sender.balance;
         uint256 bankBefore = bank.balance;
 
         vm.prank(sender, tx.origin);
@@ -168,6 +176,10 @@ contract BankHandler is CommonBase, SymTest {
         userCreditAfter = IBankGetters(bank).getCredits(user);
         userBalanceBefore = balanceBefore;
         userBalanceAfter = user.balance;
+        senderCreditBefore = senderCreditBefore_;
+        senderCreditAfter = IBankGetters(bank).getCredits(sender);
+        senderBalanceBefore = senderBalanceBefore_;
+        senderBalanceAfter = sender.balance;
         bankBalanceBefore = bankBefore;
         bankBalanceAfter = bank.balance;
     }
