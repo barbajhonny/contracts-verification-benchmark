@@ -43,9 +43,8 @@ contract BankTest is Test, SymTest {
 
     /// @custom:halmos --invariant-depth 3
     function invariant_withdraw_sender_credit() public view {
-        if (handler.lastSelector() == Bank.withdraw.selector && handler.lastSender() == handler.user()) {
-            assert(handler.userCreditAfter() <= handler.userCreditBefore());
-            assert(handler.userCreditBefore() - handler.userCreditAfter() == handler.lastAmount());
+        if (handler.lastSelector() == Bank.withdraw.selector) {
+            assert(handler.senderCreditBefore() - handler.senderCreditAfter() == handler.lastAmount());
         }
     }
 }
