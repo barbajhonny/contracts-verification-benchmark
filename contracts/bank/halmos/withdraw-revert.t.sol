@@ -41,7 +41,7 @@ contract BankTest is Test, SymTest {
         vm.assume(a != address(this));
     }
 
-    /// @custom:halmos --invariant-depth 2
+    /// @custom:halmos --invariant-depth 3
     function invariant_withdraw_revert() public view {
         if (handler.lastSelector() == Bank.withdraw.selector) {
             assert(handler.lastAmount() != 0);

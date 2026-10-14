@@ -41,7 +41,7 @@ contract BankTest is Test, SymTest {
         vm.assume(a != address(this));
     }
 
-    /// @custom:halmos --invariant-depth 2
+    /// @custom:halmos --invariant-depth 3
     function invariant_deposit_assets_credit_others() public view {
         if (handler.lastSelector() == Bank.deposit.selector && handler.lastSender() != handler.user()) {
             assert(handler.userCreditAfter() == handler.userCreditBefore());

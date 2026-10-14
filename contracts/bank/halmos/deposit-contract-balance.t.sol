@@ -41,7 +41,7 @@ contract BankTest is Test, SymTest {
         vm.assume(a != address(this));
     }
 
-    /// @custom:halmos --invariant-depth 2
+    /// @custom:halmos --invariant-depth 3
     function invariant_deposit_contract_balance() public view {
         if (handler.lastSelector() == Bank.deposit.selector) {
             assert(handler.bankBalanceAfter() >= handler.bankBalanceBefore());
