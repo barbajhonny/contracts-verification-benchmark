@@ -4,24 +4,27 @@ pragma solidity >=0.8.2;
 import {Test} from "forge-std/Test.sol";
 import {Bank} from "versions/Bank_v4.sol";
 
-// Counterexample from: build/halmos/logs/v4_deposit-assets-credit.log
-// p_value_uint256 = 0x100000000000000000000000000000000
-// The bug: credits[msg.sender] += msg.value - 1  (off-by-one)
+// Contract user (userContract1 = 0xaaaa0005 in the counterexample).
+contract User {}
+
+// tx1: deposit()  p_value = 0x100000000000000000000000000000000
+// The bug: credits[msg.sender] += msg.value - 1
 contract PoC_DepositAssetsCredit_v4 is Test {
 
     Bank bank;
+    User user;
 
     function setUp() public {
         bank = new Bank();
+        user = new User();
     }
 
     function test_poc_deposit_assets_credit() public {
-        address sender = makeAddr("sender");
+        address sender = address(user);
         uint256 value = 0x100000000000000000000000000000000;
 
         vm.deal(sender, value);
 
-        // credits is private: read slot 0 directly (mapping key => keccak256(key . slot))
         bytes32 slot = keccak256(abi.encode(sender, uint256(0)));
         uint256 creditBefore = uint256(vm.load(address(bank), slot));
 
@@ -31,8 +34,6 @@ contract PoC_DepositAssetsCredit_v4 is Test {
 
         uint256 creditAfter = uint256(vm.load(address(bank), slot));
 
-        // property: creditAfter - creditBefore == value
-        // on v4 this FAILS because deposit does: credits[msg.sender] += msg.value - 1
-        assertEq(creditAfter - creditBefore, value, "deposit-assets-credit violated");
+        assertNotEq(creditAfter - creditBefore, value, "deposit-assets-credit holds: counterexample not reproduced");
     }
 }
