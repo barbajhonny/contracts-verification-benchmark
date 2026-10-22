@@ -2,9 +2,41 @@
 Core execution and helper functions for Halmos verification tool integration.
 """
 from pathlib import Path
+import os
+import signal
 import subprocess
 import re
 import utils
+
+
+def run_in_own_process_group(cmd, cwd, timeout_seconds):
+    """
+    Run cmd in a new process group and return (stdout, stderr, timed_out).
+    On timeout, error or Ctrl-C the whole group is killed, so the solvers
+    spawned by Halmos (yices) do not survive it.
+    """
+    proc = subprocess.Popen(
+        cmd,
+        cwd=cwd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        start_new_session=True
+    )
+    timed_out = False
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout_seconds)
+    except subprocess.TimeoutExpired:
+        timed_out = True
+        os.killpg(proc.pid, signal.SIGKILL)
+        stdout, stderr = proc.communicate()
+    finally:
+        # Halmos may exit leaving solvers behind; the group outlives its leader
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    return stdout or "", stderr or "", timed_out
 
 
 def parse_timeout_to_seconds(timeout_str):
@@ -17,24 +49,6 @@ def parse_timeout_to_seconds(timeout_str):
         return int(timeout_str)
     except ValueError:
         return 600
-
-
-def check_test_exists_in_contracts(halmos_dir, clean_p):
-    """Check if any .sol file in halmos_dir contains a function matching clean_p."""
-    halmos_path = Path(halmos_dir)
-    if not halmos_path.exists():
-        return True
-
-    for sol_file in halmos_path.rglob("*.sol"):
-        try:
-            content = sol_file.read_text(encoding="utf-8")
-            pattern = rf"function\s+[a-zA-Z0-9_]*{re.escape(clean_p)}[a-zA-Z0-9_]*\s*\("
-            if re.search(pattern, content, re.IGNORECASE):
-                return True
-        except Exception:
-            continue
-
-    return False
 
 
 def extract_test_contract_name(file_path, clean_p):
@@ -81,7 +95,6 @@ def find_test_file(halmos_path, p, v):
       '<Contract>_<p>_<v>.t.sol' (e.g. regression/call_verifier)
     - generic: '<p>.t.sol' or '<Contract>_<p>.t.sol' (e.g. regression/payable)
     The property name is matched both with '-' and with '_'.
-    A version-specific file of another version is never used as a fallback.
     """
     names = {p, p.replace('-', '_')}
 
@@ -113,19 +126,46 @@ def find_test_file(halmos_path, p, v):
     return None
 
 
-def run_halmos_for_task(p, v, halmos_dir, output_dir, timeout_seconds):
-    """Execute Halmos verification for a given property and version task."""
-    clean_p = p.replace('-', '_')
-    halmos_path = Path(halmos_dir)
-    target_file_path = None
+def parse_outcome(output, test_match):
+    """Map the Halmos output to an outcome: FAIL/counterexample -> N!, PASS -> P, else UNK."""
+    # Strip ANSI colors from output
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    clean_output = ansi_escape.sub('', output)
 
-    target_file_path = find_test_file(halmos_path, p, v)
+    fail_pattern = rf"\[FAIL\]\s+.*{re.escape(test_match)}"
+    pass_pattern = rf"\[PASS\]\s+.*{re.escape(test_match)}"
+
+    if re.search(fail_pattern, clean_output, re.IGNORECASE) or (
+        re.search(rf"{re.escape(test_match)}", clean_output, re.IGNORECASE) and "Counterexample:" in clean_output
+    ):
+        return utils.STRONG_NEGATIVE
+
+    elif re.search(pass_pattern, clean_output, re.IGNORECASE):
+        return utils.WEAK_POSITIVE
+
+    lines = [line for line in clean_output.split('\n') if test_match.lower() in line.lower()]
+    for line in lines:
+        if "[fail]" in line.lower():
+            return utils.STRONG_NEGATIVE
+        if "[pass]" in line.lower():
+            return utils.WEAK_POSITIVE
+
+    return utils.UNKNOWN
+
+
+def run(p, v, halmos_dir, timeout_seconds):
+    """
+    Runs a single Halmos experiment for property p and version v.
+
+    Returns:
+        tuple: (outcome, log)
+    """
+    clean_p = p.replace('-', '_')
+    target_file_path = find_test_file(Path(halmos_dir), p, v)
 
     # Skip versions for which no version-specific test file was generated
     if not target_file_path:
-        return utils.ERROR
-
-    print(f"Running Halmos verification for property: '{p}', version: ({v})")
+        return utils.ERROR, f"No test file found for property '{p}', version ({v})."
 
     try:
         test_match = clean_p
@@ -134,65 +174,55 @@ def run_halmos_for_task(p, v, halmos_dir, output_dir, timeout_seconds):
         elif test_match.startswith("invariant_"):
             test_match = test_match[10:]
 
-        solver_timeout_ms = str(timeout_seconds * 1000)
-
         halmos_cmd = [
             "halmos",
             "--match-test", test_match,
-            "--solver-timeout-assertion", solver_timeout_ms,
+            "--solver-timeout-assertion", str(timeout_seconds * 1000),
             "--early-exit"
         ]
 
-        if target_file_path and target_file_path.exists():
-            contract_name = extract_test_contract_name(target_file_path, clean_p)
-            if contract_name:
-                halmos_cmd.extend(["--contract", contract_name])
+        contract_name = extract_test_contract_name(target_file_path, clean_p)
+        if contract_name:
+            halmos_cmd.extend(["--contract", contract_name])
 
-        # Execute Halmos process
-        halmos_res = subprocess.run(
-            halmos_cmd,
-            cwd=halmos_dir,
-            capture_output=True,
-            text=True,
-            timeout=timeout_seconds
-        )
+        stdout, stderr, timed_out = run_in_own_process_group(halmos_cmd, halmos_dir, timeout_seconds)
+        output = stdout + "\n" + stderr
 
-        output = halmos_res.stdout + "\n" + halmos_res.stderr
+        if timed_out:
+            return utils.UNKNOWN, output
 
-        # Save logs
-        logs_dir = Path(output_dir).joinpath("logs")
-        logs_dir.mkdir(parents=True, exist_ok=True)
-        log_filename = f"{v}_{p}.log" if v else f"{p}.log"
-        utils.write_log(logs_dir.joinpath(log_filename), output)
+        return parse_outcome(output, test_match), output
 
-        # Strip ANSI colors from output
-        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-        clean_output = ansi_escape.sub('', output)
-
-        # Parse verification results
-        fail_pattern = rf"\[FAIL\]\s+.*{re.escape(test_match)}"
-        pass_pattern = rf"\[PASS\]\s+.*{re.escape(test_match)}"
-
-        if re.search(fail_pattern, clean_output, re.IGNORECASE) or (
-            re.search(rf"{re.escape(test_match)}", clean_output, re.IGNORECASE) and "Counterexample:" in clean_output
-        ):
-            return utils.STRONG_NEGATIVE
-
-        elif re.search(pass_pattern, clean_output, re.IGNORECASE):
-            return utils.STRONG_POSITIVE
-
-        else:
-            lines = [line for line in clean_output.split('\n') if test_match.lower() in line.lower()]
-            for line in lines:
-                if "[fail]" in line.lower():
-                    return utils.STRONG_NEGATIVE
-                if "[pass]" in line.lower():
-                    return utils.STRONG_POSITIVE
-
-            return utils.UNKNOWN
-
-    except subprocess.TimeoutExpired:
-        return utils.UNKNOWN
     except Exception as e:
-        print(f"Error during Halmos execution for {p}: {e}")
-        return utils.ERROR
+        msg = f"Error during Halmos execution for {p}: {e}"
+        print(msg)
+        return utils.ERROR, msg
+
+
+def run_log(p, v, halmos_dir, timeout_seconds, logs_dir=None):
+    """
+    Calls run() and writes the log (also on timeout).
+    """
+    print(f"Running Halmos verification for property: '{p}', version: ({v})")
+    outcome, log = run(p, v, halmos_dir, timeout_seconds)
+    if logs_dir:
+        log_filename = f"{v}_{p}.log" if v else f"{p}.log"
+        utils.write_log(Path(logs_dir).joinpath(log_filename), log)
+    else:
+        print(log)
+    print(f"{p} ({v}): {outcome}")
+    return outcome
+
+
+def run_all(tasks, timeout_seconds, logs_dir=None, halmos_dir="./halmos"):
+    """
+    Runs Halmos on all (property, version) tasks, one at a time: each run
+    already spawns several solver processes and is bound by a wall-clock timeout.
+
+    Returns:
+        dict: {(property, version): outcome}
+    """
+    outcomes = {}
+    for p, v in tasks:
+        outcomes[(p, v)] = run_log(p, v, halmos_dir, timeout_seconds, logs_dir)
+    return outcomes

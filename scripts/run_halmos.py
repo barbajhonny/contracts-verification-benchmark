@@ -5,13 +5,9 @@ from pathlib import Path
 import argparse
 import csv
 import sys
+
 import utils
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-from scripts.tools import halmos as halmos_tool
+from tools.halmos import run_all, parse_timeout_to_seconds
 
 DEFAULT_TIMEOUT = '10m'
 
@@ -29,35 +25,67 @@ def read_gt_keys(gt_path):
     return keys
 
 
-def main(args_list=None):
+def merge_rows(current_results, existing_rows, valid_keys):
+    """
+    Merge the results of the current run into existing rows (header excluded):
+    re-run tasks are updated (or dropped on ERR), new tasks are added,
+    untouched rows are kept, rows not in valid_keys are dropped.
+    """
+    merged = []
+    seen = set()
+    for row in existing_rows:
+        if not row or len(row) < 2:
+            continue
+        key = (row[0], row[1])
+        if key not in valid_keys:
+            continue
+        if key in current_results:
+            res = current_results[key]
+            if str(res).upper() not in ["ERR"]:
+                merged.append([row[0], row[1], res])
+            seen.add(key)
+        else:
+            merged.append(row)
+
+    for (p, v), res in current_results.items():
+        if (p, v) not in seen and (p, v) in valid_keys and str(res).upper() not in ["ERR"]:
+            merged.append([p, v, res])
+
+    return merged
+
+
+def main(args):
     parser = argparse.ArgumentParser()
     parser.add_argument('--halmos-dir', '-hd', help='Halmos working directory.', required=False)
     parser.add_argument('--contracts', '-c', help='Contracts file or directory.', required=True)
-    parser.add_argument('--output', '-o', help='Output directory.', required=True)
+    parser.add_argument('--output', '-o', help='Output directory.', required=False)
     parser.add_argument('--timeout', '-t', help='Timeout time.', required=False)
-    parser.add_argument('--version', '-v', help='Run on this version only.', required=False)
+    parser.add_argument('--version', '-v', help='Run on this version only (e.g. 1 or v1).', required=False)
     parser.add_argument('--property', '-p', help='Run on this property only.', required=False)
+    args = parser.parse_args(args)
 
-    if args_list is not None:
-        args = parser.parse_args(args_list)
-    else:
-        args = parser.parse_args()
+    
+    output_parents = []
+    halmos_dir_candidates = [Path("./halmos")]
+    if args.output:
+        output = Path(args.output).resolve()
+        output_parents = [output.parent.parent, output.parent.parent.parent]
+        halmos_dir_candidates += [output.parent / "contracts", output.parent.parent / "halmos"]
 
     if args.halmos_dir:
         halmos_dir = Path(args.halmos_dir)
     else:
-        halmos_dir = Path("./halmos")
+        halmos_dir = next((d for d in halmos_dir_candidates if d.is_dir()), halmos_dir_candidates[0])
 
-    output_dir = Path(args.output)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    if args.version and not args.version.startswith('v'):
+        args.version = f"v{args.version}"
 
     timeout = args.timeout if args.timeout else DEFAULT_TIMEOUT
-    timeout_seconds = halmos_tool.parse_timeout_to_seconds(timeout)
+    timeout_seconds = parse_timeout_to_seconds(timeout)
 
-    # Locate ground-truth file (parent dir first, fallback to cwd)
-    gt_path = Path("../ground-truth.csv")
-    if not gt_path.exists():
-        gt_path = Path("./ground-truth.csv")
+    candidates = [d / "ground-truth.csv" for d in output_parents]
+    candidates += [Path("../ground-truth.csv"), Path("./ground-truth.csv")]
+    gt_path = next((p for p in candidates if p.is_file()), candidates[-1])
 
     # Read ground-truth: set of valid (property, version) pairs
     gt_keys = read_gt_keys(gt_path)
@@ -88,22 +116,24 @@ def main(args_list=None):
                 continue
             tasks.append((p, v))
 
+    # Without an output dir: run only, logs and results are printed
+    if not args.output:
+        run_all(tasks, timeout_seconds, halmos_dir=halmos_dir)
+        return
+
+    output_dir = Path(args.output)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    logs_dir = output_dir.joinpath('logs')
+    logs_dir.mkdir(parents=True, exist_ok=True)
+
     # Execute all tasks
-    current_results = {}
-    for p, v in tasks:
-        res = halmos_tool.run_halmos_for_task(p, v, halmos_dir, output_dir, timeout_seconds)
-        current_results[(p, v)] = res
+    current_results = run_all(tasks, timeout_seconds, logs_dir, halmos_dir)
 
-    # Write out.csv: current run only (ERR entries excluded)
+    # Write out.csv: merged with the previous runs (ERR entries excluded)
     out_csv_path = output_dir.joinpath('out.csv')
-    out_csv = [utils.OUT_HEADER]
-    for (p, v), res in current_results.items():
-        if str(res).upper() not in ["ERR"]:
-            out_csv.append([p, v, res])
-
-    with open(out_csv_path, 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerows(out_csv)
+    existing_out_rows = utils.read_csv(out_csv_path)[1:]
+    out_csv = [utils.OUT_HEADER] + merge_rows(current_results, existing_out_rows, gt_keys)
+    utils.write_csv(out_csv_path, out_csv)
 
     history_path = (output_dir / ".." / ".." / ".." / "halmos.csv").resolve()
 
@@ -156,10 +186,5 @@ def main(args_list=None):
         writer.writerow(utils.OUT_HEADER)
         writer.writerows(existing_rows)
 
-    # Report each result
-    for (p, v), res in current_results.items():
-        print(f"Halmos result appended for {p} ({v}): {res}")
-
-
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
