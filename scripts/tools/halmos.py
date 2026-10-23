@@ -188,6 +188,7 @@ def run(p, v, halmos_dir, timeout_seconds):
         output = stdout + "\n" + stderr
 
         if timed_out:
+            output += f"\n[TIMEOUT] killed after {timeout_seconds}s (wall-clock timeout)\n"
             return utils.UNKNOWN, output
 
         return parse_outcome(output, test_match), output
