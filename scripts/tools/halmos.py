@@ -156,16 +156,15 @@ def parse_outcome(output, test_match):
 def run(p, v, halmos_dir, timeout_seconds):
     """
     Runs a single Halmos experiment for property p and version v.
-
-    Returns:
-        tuple: (outcome, log)
     """
     clean_p = p.replace('-', '_')
     target_file_path = find_test_file(Path(halmos_dir), p, v)
 
     # Skip versions for which no version-specific test file was generated
     if not target_file_path:
-        return utils.ERROR, f"No test file found for property '{p}', version ({v})."
+        return utils.ERROR, None
+
+    print(f"Running Halmos verification for property: '{p}', version: ({v})")
 
     try:
         test_match = clean_p
@@ -202,9 +201,11 @@ def run(p, v, halmos_dir, timeout_seconds):
 def run_log(p, v, halmos_dir, timeout_seconds, logs_dir=None):
     """
     Calls run() and writes the log (also on timeout).
+    Skipped tasks (no test file) are neither printed nor logged.
     """
-    print(f"Running Halmos verification for property: '{p}', version: ({v})")
     outcome, log = run(p, v, halmos_dir, timeout_seconds)
+    if log is None:
+        return outcome
     if logs_dir:
         log_filename = f"{v}_{p}.log" if v else f"{p}.log"
         utils.write_log(Path(logs_dir).joinpath(log_filename), log)
