@@ -22,4 +22,6 @@
 **/halmos/out/
 **/halmos/cache/
 
+**/certora/logs/
+
 .gitmodules
